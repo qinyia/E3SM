@@ -1635,16 +1635,16 @@ contains
      end if
 
      if (Nudge_Uprof .ne. 0) then
-        phys_tend%u(:ncol,:pver)       =Nudge_Ustep(:ncol,:pver,lchnk)
+        phys_tend%u(:ncol,:pver-2)       =Nudge_Ustep(:ncol,:pver-2,lchnk)
      end if
      if (Nudge_Vprof .ne. 0) then
-        phys_tend%v(:ncol,:pver)       =Nudge_Vstep(:ncol,:pver,lchnk)
+        phys_tend%v(:ncol,:pver-2)       =Nudge_Vstep(:ncol,:pver-2,lchnk)
      end if
      if (Nudge_Tprof .ne. 0) then
-        phys_tend%s(:ncol,:pver)       =Nudge_Tstep(:ncol,:pver,lchnk)*cpair
+        phys_tend%s(:ncol,:pver-2)       =Nudge_Tstep(:ncol,:pver-2,lchnk)*cpair
      end if
      if (Nudge_Qprof .ne. 0) then
-        phys_tend%q(:ncol,:pver,indw)  =Nudge_Qstep(:ncol,:pver,lchnk)
+        phys_tend%q(:ncol,:pver-2,indw)  =Nudge_Qstep(:ncol,:pver-2,lchnk)
      end if
 
      call outfld('Nudge_U',phys_tend%u          ,pcols,lchnk)
