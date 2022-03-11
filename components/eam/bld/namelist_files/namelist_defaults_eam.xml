@@ -1418,6 +1418,7 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_svalbard_x8v1_lowcon"  > 3.2 </hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 3.2 </hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_enax4v1">3.2</hypervis_scaling>
+<hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sox4v3">3.2</hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_twpx4v1" > 3.2 </hypervis_scaling>
 
 
