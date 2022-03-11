@@ -154,7 +154,7 @@
 <bnd_topo hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  >atm/cam/topo/USGS_sooberingoax4x8v1-tensor12x_c150612.nc</bnd_topo>
 <bnd_topo hgrid="ne0np4_enax4v1">atm/cam/topo/USGS_enax4v1_tensorx12_consistentSGH_170522.nc</bnd_topo>
 
-<bnd_topo hgrid="ne0np4_sox4v3" npg="2">global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/USGS-gtopo30_sox4v3pg2_12xdel2.nc</bnd_topo>
+<bnd_topo hgrid="ne0np4_sox4v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/USGS-gtopo30_sox4v3pg2_12xdel2.nc</bnd_topo>
 <bnd_topo hgrid="ne0np4_twpx4v1" >atm/cam/topo/USGS_twpx4v1_tensor12x_consistentSGH_170629.nc</bnd_topo>
 
 <!-- ieflx_opt 0: atmonly, 3: coupled -->
@@ -702,7 +702,7 @@
 <!-- NOTE: ENA dry deposition file interpolated from existing rather than created new -->
 <drydep_srf_file hgrid="ne0np4_enax4v1">atm/cam/chem/trop_mam/atmsrf_enax4v1_170517.nc</drydep_srf_file>
 <!-- update sox dry dep file below -->
-<drydep_srf_file hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/atmsrf_sox4v3pg2_20220218.nc</drydep_srf_file>
+<drydep_srf_file hgrid="ne0np4_sox4v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/atmsrf_sox4v3pg2_20220218.nc</drydep_srf_file>
 
 <!-- depvel data -->
 <depvel_file    >atm/cam/chem/trop_mozart/dvel/depvel_monthly.nc</depvel_file>
@@ -1249,7 +1249,7 @@
 <mesh_file hgrid="ne0np4_svalbard_x8v1_lowcon"  >atm/cam/inic/homme/svalbardx8v1.g</mesh_file>
 <mesh_file hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  >atm/cam/inic/homme/sooberingoax4x8v1.g</mesh_file>
 <mesh_file hgrid="ne0np4_enax4v1">atm/cam/inic/homme/enax4v1.g</mesh_file>
-<mesh_file hgrid="ne0np4_sox4v3">global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/sox4v3.g</mesh_file>
+<mesh_file hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/sox4v3.g</mesh_file>
 <mesh_file hgrid="ne0np4_twpx4v1" >atm/cam/inic/homme/twpx4v1.g</mesh_file>
 
 <!-- viscosity  -->
@@ -1593,7 +1593,7 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <fatmlndfrc hgrid="ne240np4"  >share/domains/domain.lnd.ne240np4_gx1v6.120125.nc</fatmlndfrc>
 
 <fatmlndfrc hgrid="ne0np4_enax4v1">share/domains/domain.lnd.enax4v1_oRRS18to6.170621.nc</fatmlndfrc>
-<fatmlndfrc hgrid="ne0np4_sox4v3">global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.lnd.sox4v3pg2_oRRS18to6v3.220218.nc</fatmlndfrc>
+<fatmlndfrc hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.lnd.sox4v3pg2_oRRS18to6v3.220218.nc</fatmlndfrc>
 
 <!-- SNICAR (SNow, ICe, and Aerosol Radiative model) datasets -->
 <fsnowoptics >lnd/clm2/snicardata/snicar_optics_5bnd_mam_c160322.nc</fsnowoptics>
@@ -1635,7 +1635,7 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <focndomain hgrid="ne240np4"  >share/domains/domain.ocn.ne240np4_gx1v6.111226.nc</focndomain>
 
 <focndomain hgrid="ne0np4_enax4v1">share/domains/domain.ocn.enax4v1_oRRS18to6.170621.nc</focndomain>
-<focndomain hgrid="ne0np4_sox4v3">global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.ocn.sox4v3pg2_oRRS18to6v3.220218.nc</focndomain>
+<focndomain hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.ocn.sox4v3pg2_oRRS18to6v3.220218.nc</focndomain>
 
 <!-- set default parameter values for v2, moved from use_case file -->
 
