@@ -117,7 +117,7 @@
 <!-- (starting from initial file interpolated using interpic) -->
 <ncdata dyn="se" hgrid="ne0np4_enax4v1" nlev="72">atm/cam/inic/homme/cami_0002-01-01_enax4v1_L72_c170706.nc</ncdata>
 <!-- update below  with sox initial conditions file) -->
-<ncdata dyn="se" hgrid="ne0np4_sox4v3" nlev="72">/global/project/projectdirs/m3525/crjones/socrates/1timestep/HICCUP.atm_era5.2018-01-15.sox4v3pg2.L72.nc</ncdata>
+<ncdata dyn="se" hgrid="ne0np4_sox4v3.pg2" nlev="72">/global/project/projectdirs/m3525/crjones/socrates/1timestep/HICCUP.atm_era5.2018-01-15.sox4v3pg2.L72.nc</ncdata>
 
 
 <!-- Topography -->
