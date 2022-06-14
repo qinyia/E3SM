@@ -30,7 +30,8 @@ module cospsimulator_intr
        numISCCPTauBins, numISCCPPresBins, numMISRTauBins, reffICE_binEdges,            &
        reffICE_binCenters, reffLIQ_binEdges, reffLIQ_binCenters, LIDAR_NTYPE,          &
        nCloudsatPrecipClass, CFODD_NDBZE, CFODD_NICOD, CFODD_HISTDBZEedges,            &
-       CFODD_HISTDBZEcenters, CFODD_HISTICODedges, CFODD_HISTICODcenters               &
+       CFODD_HISTDBZEcenters, CFODD_HISTICODedges, CFODD_HISTICODcenters,              &
+       CFODD_NCLASS, WR_NREGIME,                                                       &
        nsza_cosp         => PARASOL_NREFL,       &
        nprs_cosp         => npres,               &
        ntau_cosp         => ntau,                &
@@ -71,8 +72,9 @@ module cospsimulator_intr
        nhtml_cosp = pver  ! Mumber of model levels is pver
   integer ::  &
        nscol_cosp,  &     ! Number of subcolumns, use namelist input Ncolumns to set.
-       nht_cosp           ! Number of height for COSP radar and calipso simulator outputs.  
-                          !  *set to 40 if csat_vgrid=.true., else set to Nlr*
+       nht_cosp,    &     ! Number of height for COSP radar and calipso simulator outputs.  
+       cfodd_ndbze_int, & !  *set to 40 if csat_vgrid=.true., else set to Nlr*
+       cfodd_nicod_int
   
   ! ######################################################################################
   ! Bin-boundaries for mixed dimensions. Calculated in cospsetupvales OR in cosp_config.F90
@@ -96,7 +98,7 @@ module cospsimulator_intr
   real(r8), target :: reffLIQ_binCenters_cosp(numMODISReffLiqBins)
   real(r8), target :: cfodddbze_binEdges_cosp(2,CFODD_NDBZE) !warm rain CFODD dBZe bin edges 
   real(r8), target :: cfodddbze_binCenters_cosp(CFODD_NDBZE)
-  real(r8), target :: cfoddicod_binEdges_cosp(2,CFODD,NICOD)
+  real(r8), target :: cfoddicod_binEdges_cosp(2,CFODD_NICOD)
   real(r8), target :: cfoddicod_binCenters_cosp(CFODD_NICOD)
 
   real(r8) :: htmlmid_cosp(nhtml_cosp)                     ! Model level height midpoints for output
@@ -232,7 +234,7 @@ module cospsimulator_intr
   ! ######################################################################################
   ! Declarations specific to COSP2
   ! ######################################################################################
-  type(radar_cfg)              :: rcfg_cloudsat ! Radar configuration (Cloudsat)
+  type(radar_cfg) :: rcfg_cloudsat ! Radar configuration (Cloudsat)
   type(radar_cfg), allocatable :: rcfg_cs(:)    ! chunked version of rcfg_cloudsat
   type(size_distribution)              :: sd       ! Size distribution used by radar simulator
   type(size_distribution), allocatable :: sd_cs(:) ! chunked version of sd
@@ -345,6 +347,9 @@ CONTAINS
           nht_cosp = Nlr_in
        endif
     endif
+
+cfodd_ndbze_int = CFODD_NDBZE
+cfodd_nicod_int = CFODD_NICOD
     
     ! Set COSP call frequency, from namelist.
     cosp_nradsteps = cosp_nradsteps_in
@@ -571,6 +576,7 @@ CONTAINS
        lmisr_sim = .true.
        lmodis_sim = .true.
        cosp_ncolumns = 10
+       !cosp_ncolumns = 50 !CB
        cosp_nradsteps = 3
     end if
     
@@ -674,12 +680,14 @@ CONTAINS
             bounds_name='cosp_reffliq_bnds',bounds=reffLIQ_binEdges_cosp)      
     end if
     
-    if (lmodis_sim) .and. (lradar_sim) then
-        call add_hist_coord('cosp_cfodd_ndbze', CFODD_NDBZE, 'Number of CFODD dBZe bins', &
-             '1',cfodddbze_binCenters_cosp, bounds_name='cosp_cfodd_dbze_bnds', &
+    if ((lmodis_sim) .and. (lradar_sim)) then
+        call add_hist_coord('cosp_cfodd_dbze', CFODD_NDBZE,                   &
+             'COSP mean dBZe for simulator CFODD output', 'dBZ',              &
+             cfodddbze_binCenters_cosp, bounds_name='cosp_cfodd_dbze_bnds',   &
              bounds=cfodddbze_binEdges_cosp)
-        call add_hist_coord('cosp_cfodd_nicod', CFODD_NICOD, 'Number of CFODD ICOD bins', &
-             '1',cfoddicod_binCenters_cosp, bounds_name='cosp_cfodd_dbze_bnds', &
+        call add_hist_coord('cosp_cfodd_icod', CFODD_NICOD,                   &
+             'COSP mean ICOD for simulator CFODD output', '1',                &
+             cfoddicod_binCenters_cosp, bounds_name='cosp_cfodd_icod_bnds',   &
              bounds=cfoddicod_binEdges_cosp)
     endif
     
@@ -1075,14 +1083,20 @@ CONTAINS
     end if
     
     !Warm rain joint MODIS and CloudSat products
-    if (lradar_sim) .and. (lmodis_sim)
+    if ((lradar_sim) .and. (lmodis_sim)) then
         ! int ncfodd1 ( time, cfodd_ndbze, cfodd_nicod, loc)
-        call addfld('CFODD_NTOTAL1',(/'cosp_cfodd_ndbze','cosp_cfodd_nicod' /),&
+        call addfld ('CFODD_NTOTAL1',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
              'I','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('CFODD_NTOTAL2',(/'cosp_cfodd_ndbze','cosp_cfodd_nicod' /),&
-             'I','1','# of CFODD (12 < Reff < 18 micron)'), flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('CFODD_NTOTAL3',(/'cosp_cfodd_ndbze','cosp_cfodd_nicod' /),&
-             'I','1','# of CFODD (18 < Reff < 35 micron)'), flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('CFODD_NTOTAL2',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
+             'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('CFODD_NTOTAL3',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
+             'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('CFODD_NTOTAL1_CS',(/'cosp_cfodd_dbze', 'cosp_cfodd_icod' /),&
+             'I','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('CFODD_NTOTAL2_CS',(/'cosp_cfodd_dbze', 'cosp_cfodd_icod' /),&
+             'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)    
+        call addfld ('CFODD_NTOTAL3_CS',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
+             'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
              
         ! axes for CFODD - I think you don't need this because its a history coordinate
         ! float CFODD_NDBZE (cfodd_ndbze) cloudsat_equivalent_reflectivity_factor
@@ -1097,22 +1111,36 @@ CONTAINS
         call add_default ('CFODD_NTOTAL1',cosp_histfile_num,' ') 
         call add_default ('CFODD_NTOTAL2',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL3',cosp_histfile_num, ' ')
+        call add_default ('CFODD_NTOTAL1_CS',cosp_histfile_num, ' ')
+        call add_default ('CFODD_NTOTAL2_CS',cosp_histfile_num, ' ')
+        call add_default ('CFODD_NTOTAL3_CS',cosp_histfile_num, ' ')
         !call add_default ('CFODD_NDBZE',cosp_histfile_num, ' ')
         !call add_default ('CFODD_NICOD',cosp_histfile_num, ' ')
         
         !Warm-rain occurrence frequency diagnostics
         ! int npdfcld (loc), "number_of_slwc_nonprecip"
-        call addfld('npdfcld', horiz_only, 'I', '1', '# of Non-Precipitating Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfcld', horiz_only, 'I', '1', '# of Non-Precipitating Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
         
         !CB Continue here adding npdfdrz and npdfrain 
         ! int npdfdrz (loc), "number_of_slwc_drizzle"
-        call addfld('npdfdrz', horiz_only, 'I', '1', '# of Drizzling Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfdrz', horiz_only, 'I', '1', '# of Drizzling Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
         ! int npdfrain (loc), "number_of_slwc_precip"
-        call addfld('npdfrain', horiz_only, 'I', '1', '# of Precipitating Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfrain', horiz_only, 'I', '1', '# of Precipitating Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
         
+        !CB Adding counts of other cloud types not included in diagnostics
+        ! int lsmallcot (loc), "number_of_slwc_lowCOT"
+        call addfld ('lsmallcot', horiz_only, 'I', '1', '# of Liquid Clouds with low COT', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('mice', horiz_only, 'I', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('lsmallreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('lbigreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
+
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
+        call add_default('lsmallcot',cosp_histfile_num,' ')
+        call add_default('mice',cosp_histfile_num,' ')
+        call add_default('lsmallreff',cosp_histfile_num,' ')
+        call add_default('lbigreff',cosp_histfile_num,' ')
     endif
         
     
@@ -1607,12 +1635,19 @@ CONTAINS
     real(r8) :: clrlmodis_cam(pcols,ntau_cosp*numMODISReffLiqBins)
     real(r8) :: clrlmodis(pcols,ntau_cosp,numMODISReffLiqBins)
     !real(r8) :: tau067_out(pcols,nhtml_cosp*nscol_cosp),emis11_out(pcols,nhtml_cosp*nscol_cosp)
-    real(r8) :: cfodd_ntotal1(pcols,CFODD_NDBZE*CFODD_NICOD)
-    real(r8) :: cfodd_ntotal2(pcols,CFODD_NDBZE*CFODD_NICOD)
-    real(r8) :: cfodd_ntotal2(pcols,CFODD_NDBZE*CFODD_NICOD)
+    real(r8) :: cfodd_ntotal1(pcols,CFODD_NDBZE,CFODD_NICOD)
+    real(r8) :: cfodd_ntotal2(pcols,CFODD_NDBZE,CFODD_NICOD)
+    real(r8) :: cfodd_ntotal3(pcols,CFODD_NDBZE,CFODD_NICOD)
+    real(r8) :: cfodd_ntotal1_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
+    real(r8) :: cfodd_ntotal2_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
+    real(r8) :: cfodd_ntotal3_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: npdfcld(pcols)
     real(r8) :: npdfdrz(pcols)
     real(r8) :: npdfrain(pcols)
+    real(r8) :: lsmallcot(pcols)
+    real(r8) :: mice(pcols)
+    real(r8) :: lsmallreff(pcols)
+    real(r8) :: lbigreff(pcols)
     
     real(r8),dimension(pcols,nhtml_cosp*nscol_cosp) :: &
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
@@ -1712,6 +1747,10 @@ CONTAINS
     npdfcld(1:pcols)                                 = R_UNDEF
     npdfdrz(1:pcols)                                 = R_UNDEF
     npdfrain(1:pcols)                                = R_UNDEF
+    lsmallcot(1:pcols)                               = R_UNDEF
+    mice(1:pcols)                                    = R_UNDEF
+    lsmallreff(1:pcols)                              = R_UNDEF
+    lbigreff(1:pcols)                                = R_UNDEF
     tau_isccp(1:pcols,1:nscol_cosp)                  = R_UNDEF
     cldptop_isccp(1:pcols,1:nscol_cosp)              = R_UNDEF
     meantau_isccp(1:pcols)                           = R_UNDEF
@@ -2143,6 +2182,9 @@ CONTAINS
     ! ######################################################################################
     call t_startf("construct_cosp_outputs")
     call construct_cosp_outputs(ncol,nscol_cosp,pver,Nlvgrid,0,cospOUT)
+    !if (allocated(cospOUT%cfodd_ntotal)) then
+    !    print*, "cospOUT%cfodd_ntotal is allocated after construct_cosp_outputs call"
+    !endif
     call t_stopf("construct_cosp_outputs")
     
     ! ######################################################################################
@@ -2472,13 +2514,17 @@ CONTAINS
        clrlmodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_Optical_Thickness_vs_ReffLIQ
     endif
     
-    if (lradar_sim) .and. (lmodis_sim) then
+    if ((lradar_sim) .and. (lmodis_sim)) then
         cfodd_ntotal1(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,1)
         cfodd_ntotal2(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,2)
         cfodd_ntotal3(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,3)
         npdfcld(1:ncol) = cospOUT%wr_occfreq_ntotal(:,1)
         npdfdrz(1:ncol) = cospOUT%wr_occfreq_ntotal(:,2)
         npdfrain(1:ncol) = cospOUT%wr_occfreq_ntotal(:,3)
+        lsmallcot(1:ncol) = cospOUT%lsmallcot(:)
+        mice(1:ncol) = cospOUT%mice(:)
+        lsmallreff(1:ncol) = cospOUT%lsmallreff(:)
+        lbigreff(1:ncol) = cospOUT%lbigreff(:)
     endif
         
         
@@ -2503,10 +2549,10 @@ CONTAINS
           end do
        endif
        
-       if (lradar_sim) .and. (lmodis_sim)
+       if ((lradar_sim) .and. (lmodis_sim)) then
            ! CAM cfodd_ntotal1 (time,cfodd_ndbze,cfodd_nicod,profile)
-           do ih=1,CFODD_ICOD
-               do id=1,CFODD_NDBZE
+           do ih=1,cfodd_nicod_int
+               do id=1,cfodd_ndbze_int
                    idic=(ih-1)*CFODD_NDBZE+id
                    cfodd_ntotal1_cs(i,idic) = cfodd_ntotal1(i,id,ih)  ! cfodd_ntotal1_cs(pcols,cfodd_ndbze*cfodd_icod)
                    cfodd_ntotal2_cs(i,idic) = cfodd_ntotal2(i,id,ih)
@@ -2761,7 +2807,7 @@ CONTAINS
        call outfld('CS_PIA',        cloudsatpia,      pcols, lchnk)
     end if
     
-    if (lradar_sim) .and. (lmodis_sim)
+    if ((lradar_sim) .and. (lmodis_sim)) then
         where (cfodd_ntotal1_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) .eq. R_UNDEF)
             cfodd_ntotal1_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) = 0.0_r8
         end where
@@ -2780,6 +2826,10 @@ CONTAINS
          call outfld('npdfcld', npdfcld, pcols, lchnk)
          call outfld('npdfdrz', npdfdrz, pcols, lchnk)
          call outfld('npdfrain', npdfrain, pcols, lchnk)
+         call outfld('lsmallcot',lsmallcot, pcols, lchnk)
+         call outfld('mice', mice, pcols, lchnk)
+         call outfld('lsmallreff', lsmallreff, pcols, lchnk)
+         call outfld('lbigreff', lbigreff, pcols, lchnk)
     endif    
     
     
@@ -3564,7 +3614,16 @@ CONTAINS
        allocate(x%cloudsat_precip_cover(Npoints,nCloudsatPrecipClass))
        allocate(x%cloudsat_pia(Npoints))
     endif
-
+    
+    !if ((lradar_sim) .and. (lmodis_sim)) then
+allocate(x%cfodd_ntotal(Npoints,CFODD_NDBZE,CFODD_NICOD,CFODD_NCLASS))
+allocate(x%wr_occfreq_ntotal(Npoints,WR_NREGIME))
+allocate(x%lsmallcot(Npoints))
+allocate(x%mice(Npoints))
+allocate(x%lsmallreff(Npoints))
+allocate(x%lbigreff(Npoints))
+    !endif
+        
   end subroutine construct_cosp_outputs
 
   !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3874,6 +3933,31 @@ CONTAINS
         deallocate(y%calipso_lidarcldtype)
         nullify(y%calipso_lidarcldtype)
      endif
+     if (associated(y%cfodd_ntotal)) then
+        deallocate(y%cfodd_ntotal)
+        nullify(y%cfodd_ntotal)
+     endif
+     if (associated(y%wr_occfreq_ntotal)) then
+        deallocate(y%wr_occfreq_ntotal)
+        nullify(y%wr_occfreq_ntotal)
+     endif
+     if (associated(y%lsmallcot)) then
+        deallocate(y%lsmallcot)
+        nullify(y%lsmallcot)
+     endif
+     if (associated(y%mice)) then
+        deallocate(y%mice)
+        nullify(y%lsmallcot)
+     endif
+     if (associated(y%lsmallreff)) then
+        deallocate(y%lsmallreff) 
+        nullify(y%lsmallcot)
+     endif
+     if (associated(y%lbigreff)) then
+        deallocate(y%lbigreff)
+        nullify(y%lbigreff)
+     endif
+        
         
    end subroutine destroy_cosp_outputs
 #endif
