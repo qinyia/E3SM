@@ -1652,7 +1652,7 @@ CONTAINS
                cospIN%frac_out(:,:,cloudsatIN%Nlevels:1:-1), Nlvgrid,         &
                vgrid_zl(Nlvgrid:1:-1), vgrid_zu(Nlvgrid:1:-1),                &
                frac_outI(:,:,Nlvgrid:1:-1)                                    )
-          !print*, "frac_out: ",frac_outI(1,1,3)
+          where (frac_outI .lt. 0) frac_outI = 0._wp                          !CMB setting large negative numbers to 0
           call cosp_diag_warmrain(                                            &
                cloudsatIN%Npoints, cloudsatIN%Ncolumns, Nlvgrid,              & !! in
                tempI, zlev,                                                   & !! in
