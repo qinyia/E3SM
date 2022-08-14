@@ -31,7 +31,7 @@ module cospsimulator_intr
        reffICE_binCenters, reffLIQ_binEdges, reffLIQ_binCenters, LIDAR_NTYPE,          &
        nCloudsatPrecipClass, CFODD_NDBZE, CFODD_NICOD, CFODD_HISTDBZEedges,            &
        CFODD_HISTDBZEcenters, CFODD_HISTICODedges, CFODD_HISTICODcenters,              &
-       CFODD_NCLASS, WR_NREGIME,                                                       &
+       CFODD_NCLASS, WR_NREGIME, NOBSTYPE,                                             &
        nsza_cosp         => PARASOL_NREFL,       &
        nprs_cosp         => npres,               &
        ntau_cosp         => ntau,                &
@@ -577,7 +577,7 @@ cfodd_nicod_int = CFODD_NICOD
        lmodis_sim = .true.
        cosp_ncolumns = 10
        !cosp_ncolumns = 50 !CB
-       cosp_nradsteps = 3
+       !cosp_nradsteps = 3
     end if
     
     !! reset COSP namelist variables based on input from cam namelist variables
@@ -1133,7 +1133,9 @@ cfodd_nicod_int = CFODD_NICOD
         call addfld('mice', horiz_only, 'I', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lsmallreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lbigreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
-
+        call addfld('obs_ntotal1', horiz_only, 'I', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('obs_ntotal2', horiz_only, 'I', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('obs_ntotal3', horiz_only, 'I', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
@@ -1141,6 +1143,9 @@ cfodd_nicod_int = CFODD_NICOD
         call add_default('mice',cosp_histfile_num,' ')
         call add_default('lsmallreff',cosp_histfile_num,' ')
         call add_default('lbigreff',cosp_histfile_num,' ')
+        call add_default('obs_ntotal1',cosp_histfile_num, ' ')
+        call add_default('obs_ntotal2',cosp_histfile_num, ' ')
+        call add_default('obs_ntotal3',cosp_histfile_num, ' ' )
     endif
         
     
@@ -1648,6 +1653,10 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: mice(pcols)
     real(r8) :: lsmallreff(pcols)
     real(r8) :: lbigreff(pcols)
+    real(r8) :: obs_ntotal(pcols,NOBSTYPE)
+    real(r8) :: obs_ntotal1(pcols)
+    real(r8) :: obs_ntotal2(pcols)
+    real(r8) :: obs_ntotal3(pcols)
     
     real(r8),dimension(pcols,nhtml_cosp*nscol_cosp) :: &
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
@@ -1751,6 +1760,10 @@ cfodd_nicod_int = CFODD_NICOD
     mice(1:pcols)                                    = R_UNDEF
     lsmallreff(1:pcols)                              = R_UNDEF
     lbigreff(1:pcols)                                = R_UNDEF
+    obs_ntotal(1:pcols,1:NOBSTYPE)                   = R_UNDEF
+    obs_ntotal1(1:pcols)                             = R_UNDEF
+    obs_ntotal2(1:pcols)                             = R_UNDEF
+    obs_ntotal3(1:pcols)                             = R_UNDEF
     tau_isccp(1:pcols,1:nscol_cosp)                  = R_UNDEF
     cldptop_isccp(1:pcols,1:nscol_cosp)              = R_UNDEF
     meantau_isccp(1:pcols)                           = R_UNDEF
@@ -2525,6 +2538,9 @@ cfodd_nicod_int = CFODD_NICOD
         mice(1:ncol) = cospOUT%mice(:)
         lsmallreff(1:ncol) = cospOUT%lsmallreff(:)
         lbigreff(1:ncol) = cospOUT%lbigreff(:)
+        obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
+        obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
+        obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
     endif
         
         
@@ -2830,6 +2846,9 @@ cfodd_nicod_int = CFODD_NICOD
          call outfld('mice', mice, pcols, lchnk)
          call outfld('lsmallreff', lsmallreff, pcols, lchnk)
          call outfld('lbigreff', lbigreff, pcols, lchnk)
+         call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
+         call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
+         call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
     endif    
     
     
@@ -3622,6 +3641,7 @@ allocate(x%lsmallcot(Npoints))
 allocate(x%mice(Npoints))
 allocate(x%lsmallreff(Npoints))
 allocate(x%lbigreff(Npoints))
+allocate(x%obs_ntotal(Npoints,NOBSTYPE))
     !endif
         
   end subroutine construct_cosp_outputs
@@ -3957,7 +3977,10 @@ allocate(x%lbigreff(Npoints))
         deallocate(y%lbigreff)
         nullify(y%lbigreff)
      endif
-        
+     if (associated(y%obs_ntotal)) then
+        deallocate(y%obs_ntotal)
+        nullify(y%obs_ntotal)
+     endif        
         
    end subroutine destroy_cosp_outputs
 #endif
