@@ -1042,6 +1042,12 @@ cfodd_nicod_int = CFODD_NICOD
        ! float reffclimodis ( time, loc )
        call addfld ('REFFCLIMODIS',horiz_only,'A','m','MODIS Ice Cloud Particle Size*CLIMODIS',                     &
             flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float reffmodisl (time, loc )
+       call addfld('REFFMODISL', horiz_only,'A','m','MODIS Liquid Cloud Particle Size',                             &
+            flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float reffmodisi ( time, loc )
+       call addfld('REFFMODISI', horiz_only,'A','m', 'MODIS Ice Cloud Particle Size',                               &
+            flag_xyfill=.true., fill_value_RUNDEF)
        ! float pctmodis ( time, loc )
        call addfld ('PCTMODIS',horiz_only,'A','Pa','MODIS Cloud Top Pressure*CLTMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float lwpmodis ( time, loc )
@@ -1074,6 +1080,8 @@ cfodd_nicod_int = CFODD_NICOD
        call add_default ('TAUILOGMODIS',cosp_histfile_num,' ')
        call add_default ('REFFCLWMODIS',cosp_histfile_num,' ')
        call add_default ('REFFCLIMODIS',cosp_histfile_num,' ')
+       call add_default ('REFFMODISL',cosp_histfile_num, ' ')
+       call add_default ('REFFMODISI',cosp_histfile_num, ' ')
        call add_default ('PCTMODIS',cosp_histfile_num,' ')
        call add_default ('LWPMODIS',cosp_histfile_num,' ')
        call add_default ('IWPMODIS',cosp_histfile_num,' ')
@@ -1439,7 +1447,7 @@ cfodd_nicod_int = CFODD_NICOD
     integer, parameter :: nf_calipso=28                  ! number of calipso outputs
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
-    integer, parameter :: nf_modis=20                    ! number of modis outputs
+    integer, parameter :: nf_modis=22                    ! number of modis outputs
     
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1478,7 +1486,7 @@ cfodd_nicod_int = CFODD_NICOD
                        'CLLMODIS    ','TAUTMODIS   ','TAUWMODIS   ','TAUIMODIS   ','TAUTLOGMODIS',&
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ','LWPMODIS    ','IWPMODIS    ','CLMODIS     ','CLRIMODIS   ',&
-                       'CLRLMODIS   '/)
+                       'CLRLMODIS   ','REFFMODISL  ','REFFMODISI',/)
     
     logical :: run_radar(nf_radar,pcols)                 ! logical telling you if you should run radar simulator
     logical :: run_calipso(nf_calipso,pcols)                 ! logical telling you if you should run calipso simulator
@@ -1630,6 +1638,8 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: tauilogmodis(pcols)
     real(r8) :: reffclwmodis(pcols)
     real(r8) :: reffclimodis(pcols)
+    real(r8) :: reffmodisl(pcols)
+    real(r8) :: reffmodisi(pcols)
     real(r8) :: pctmodis(pcols)
     real(r8) :: lwpmodis(pcols)
     real(r8) :: iwpmodis(pcols)
@@ -1804,6 +1814,8 @@ cfodd_nicod_int = CFODD_NICOD
     tauilogmodis(1:pcols)                            = R_UNDEF
     reffclwmodis(1:pcols)                            = R_UNDEF
     reffclimodis(1:pcols)                            = R_UNDEF
+    reffmodisl(1:pcols)                              = R_UNDEF
+    reffmodisi(1:pcols)                              = R_UNDEF
     pctmodis(1:pcols)                                = R_UNDEF
     lwpmodis(1:pcols)                                = R_UNDEF
     iwpmodis(1:pcols)                                = R_UNDEF
@@ -2517,15 +2529,18 @@ cfodd_nicod_int = CFODD_NICOD
        tautlogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Total_LogMean
        tauwlogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Water_LogMean
        tauilogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Ice_LogMean
-       reffclwmodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Water_Mean
+       reffclwmodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Water_Mean !reffclwmodis and reffclimodis get weighted by clwmodis before written out, see below
        reffclimodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Ice_Mean
+       reffmodisl(1:ncol)   = cospOUT%modis_Cloud_Particle_Size_Water_Mean !reffmodisl and reffmodisi not weighted by cloud fraction because normalizing by cf monthly averages yields different Reff results
+       reffmodisi(1:ncol)   = cospOUT%modis_Cloud_Particle_Size_Ice_Mean
        pctmodis(1:ncol)     = cospOUT%modis_Cloud_Top_Pressure_Total_Mean
        lwpmodis(1:ncol)     = cospOUT%modis_Liquid_Water_Path_Mean
        iwpmodis(1:ncol)     = cospOUT%modis_Ice_Water_Path_Mean
        clmodis(1:ncol,1:ntau_cosp_modis,1:nprs_cosp)  = cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure 
        clrimodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffIceBins) = cospOUT%modis_Optical_Thickness_vs_ReffICE
-       clrlmodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_Optical_Thickness_vs_ReffLIQ
+       clrlmodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_Optical_Thickness_vs_ReffLIQ           
     endif
+ 
     
     if ((lradar_sim) .and. (lmodis_sim)) then
         cfodd_ntotal1(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,1)
@@ -2931,6 +2946,16 @@ cfodd_nicod_int = CFODD_NICOD
           reffclimodis(:ncol) = reffclimodis(:ncol)*climodis(:ncol)
        end where
        call outfld('REFFCLIMODIS',reffclimodis    ,pcols,lchnk)
+       
+       where ((reffmodisl(:ncol) .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
+          reffmodisl(:ncol) = R_UNDEF
+       end where
+       call outfld('REFFMODISL',reffmodisl        ,pcols,lchnk)
+       
+       where ((reffmodisi(:ncol) .eq. R_UNDEF) .or. (climodis(:ncol) .eq. R_UNDEF))
+          reffmodisi(:ncol) = R_UNDEF
+       end where
+       call outfld('REFFMODISI',reffmodisi        ,pcols,lchnk)
        
        where ((pctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
           pctmodis(:ncol) = R_UNDEF
