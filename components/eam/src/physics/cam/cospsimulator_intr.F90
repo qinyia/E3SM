@@ -1043,11 +1043,11 @@ cfodd_nicod_int = CFODD_NICOD
        call addfld ('REFFCLIMODIS',horiz_only,'A','m','MODIS Ice Cloud Particle Size*CLIMODIS',                     &
             flag_xyfill=.true., fill_value=R_UNDEF)
        ! float reffmodisl (time, loc )
-       call addfld('REFFMODISL', horiz_only,'A','m','MODIS Liquid Cloud Particle Size',                             &
+       call addfld ('REFFMODISL', horiz_only,'A','m','MODIS Liquid Cloud Particle Size',                             &
             flag_xyfill=.true., fill_value=R_UNDEF)
        ! float reffmodisi ( time, loc )
-       call addfld('REFFMODISI', horiz_only,'A','m', 'MODIS Ice Cloud Particle Size',                               &
-            flag_xyfill=.true., fill_value_RUNDEF)
+       call addfld ('REFFMODISI', horiz_only,'A','m', 'MODIS Ice Cloud Particle Size',                               &
+            flag_xyfill=.true., fill_value=R_UNDEF)
        ! float pctmodis ( time, loc )
        call addfld ('PCTMODIS',horiz_only,'A','Pa','MODIS Cloud Top Pressure*CLTMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float lwpmodis ( time, loc )
@@ -1141,6 +1141,9 @@ cfodd_nicod_int = CFODD_NICOD
         call addfld('mice', horiz_only, 'I', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lsmallreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lbigreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nmultilcld', horiz_only, 'I', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nhetcld', horiz_only, 'I', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('coldct', horiz_only, 'I', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal1', horiz_only, 'I', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal2', horiz_only, 'I', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal3', horiz_only, 'I', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
@@ -1151,6 +1154,9 @@ cfodd_nicod_int = CFODD_NICOD
         call add_default('mice',cosp_histfile_num,' ')
         call add_default('lsmallreff',cosp_histfile_num,' ')
         call add_default('lbigreff',cosp_histfile_num,' ')
+        call add_default('nmultilcld',cosp_histfile_num, ' ')
+        call add_default('nhetcld',cosp_histfile_num,' ')
+        call add_default('coldct',cosp_histfile_num, ' ')
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
         call add_default('obs_ntotal2',cosp_histfile_num, ' ')
         call add_default('obs_ntotal3',cosp_histfile_num, ' ' )
@@ -1486,7 +1492,7 @@ cfodd_nicod_int = CFODD_NICOD
                        'CLLMODIS    ','TAUTMODIS   ','TAUWMODIS   ','TAUIMODIS   ','TAUTLOGMODIS',&
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ','LWPMODIS    ','IWPMODIS    ','CLMODIS     ','CLRIMODIS   ',&
-                       'CLRLMODIS   ','REFFMODISL  ','REFFMODISI',/)
+                       'CLRLMODIS   ','REFFMODISL  ','REFFMODISI' /)
     
     logical :: run_radar(nf_radar,pcols)                 ! logical telling you if you should run radar simulator
     logical :: run_calipso(nf_calipso,pcols)                 ! logical telling you if you should run calipso simulator
@@ -1663,6 +1669,9 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: mice(pcols)
     real(r8) :: lsmallreff(pcols)
     real(r8) :: lbigreff(pcols)
+    real(r8) :: nmultilcld(pcols)
+    real(r8) :: nhetcld(pcols)
+    real(r8) :: coldct(pcols)
     real(r8) :: obs_ntotal(pcols,NOBSTYPE)
     real(r8) :: obs_ntotal1(pcols)
     real(r8) :: obs_ntotal2(pcols)
@@ -1770,6 +1779,9 @@ cfodd_nicod_int = CFODD_NICOD
     mice(1:pcols)                                    = R_UNDEF
     lsmallreff(1:pcols)                              = R_UNDEF
     lbigreff(1:pcols)                                = R_UNDEF
+    nmultilcld(1:pcols)                              = R_UNDEF
+    nhetcld(1:pcols)                                 = R_UNDEF
+    coldct(1:pcols)                                  = R_UNDEF
     obs_ntotal(1:pcols,1:NOBSTYPE)                   = R_UNDEF
     obs_ntotal1(1:pcols)                             = R_UNDEF
     obs_ntotal2(1:pcols)                             = R_UNDEF
@@ -2553,6 +2565,9 @@ cfodd_nicod_int = CFODD_NICOD
         mice(1:ncol) = cospOUT%mice(:)
         lsmallreff(1:ncol) = cospOUT%lsmallreff(:)
         lbigreff(1:ncol) = cospOUT%lbigreff(:)
+        nmultilcld(1:ncol) = cospOUT%nmultilcld(:)
+        nhetcld(1:ncol) = cospOUT%nhetcld(:)
+        coldct(1:ncol) = cospOUT%coldct(:)
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
         obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
@@ -2861,6 +2876,9 @@ cfodd_nicod_int = CFODD_NICOD
          call outfld('mice', mice, pcols, lchnk)
          call outfld('lsmallreff', lsmallreff, pcols, lchnk)
          call outfld('lbigreff', lbigreff, pcols, lchnk)
+         call outfld('nmultilcld', nmultilcld, pcols, lchnk)
+         call outfld('nhetcld', nhetcld, pcols, lchnk)
+         call outfld('coldct', coldct, pcols, lchnk)
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
          call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
@@ -3666,6 +3684,9 @@ allocate(x%lsmallcot(Npoints))
 allocate(x%mice(Npoints))
 allocate(x%lsmallreff(Npoints))
 allocate(x%lbigreff(Npoints))
+allocate(x%nmultilcld(Npoints))
+allocate(x%nhetcld(Npoints))
+allocate(x%coldct(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
     !endif
         
@@ -3992,15 +4013,27 @@ allocate(x%obs_ntotal(Npoints,NOBSTYPE))
      endif
      if (associated(y%mice)) then
         deallocate(y%mice)
-        nullify(y%lsmallcot)
+        nullify(y%mice)
      endif
      if (associated(y%lsmallreff)) then
         deallocate(y%lsmallreff) 
-        nullify(y%lsmallcot)
+        nullify(y%lsmallreff)
      endif
      if (associated(y%lbigreff)) then
         deallocate(y%lbigreff)
         nullify(y%lbigreff)
+     endif
+     if (associated(y%nmultilcld)) then
+        deallocate(y%nmultilcld)
+        nullify(y%nmultilcld)
+     endif
+     if (associated(y%nhetcld)) then
+        deallocate(y%nhetcld)
+        nullify(y%nhetcld)
+     endif
+     if (associated(y%coldct)) then
+        deallocate(y%coldct)
+        nullify(y%coldct)
      endif
      if (associated(y%obs_ntotal)) then
         deallocate(y%obs_ntotal)
