@@ -1147,6 +1147,7 @@ cfodd_nicod_int = CFODD_NICOD
         call addfld('obs_ntotal1', horiz_only, 'I', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal2', horiz_only, 'I', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal3', horiz_only, 'I', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('slwccot', (/'cosp_scol'/), 'I', '1', 'Cloud optical thickness of SLWCs only', flag_xyfill=.true., fill_value=R_UNDEF)
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
@@ -1160,6 +1161,7 @@ cfodd_nicod_int = CFODD_NICOD
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
         call add_default('obs_ntotal2',cosp_histfile_num, ' ')
         call add_default('obs_ntotal3',cosp_histfile_num, ' ' )
+        call add_default('slwccot', cosp_histfile_num,' ' )
     endif
         
     
@@ -1676,6 +1678,7 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: obs_ntotal1(pcols)
     real(r8) :: obs_ntotal2(pcols)
     real(r8) :: obs_ntotal3(pcols)
+    real(r8) :: slwccot(pcols,nscol_cosp)
     
     real(r8),dimension(pcols,nhtml_cosp*nscol_cosp) :: &
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
@@ -1786,6 +1789,7 @@ cfodd_nicod_int = CFODD_NICOD
     obs_ntotal1(1:pcols)                             = R_UNDEF
     obs_ntotal2(1:pcols)                             = R_UNDEF
     obs_ntotal3(1:pcols)                             = R_UNDEF
+    slwccot(1:pcols,1:nscol_cosp)                    = R_UNDEF
     tau_isccp(1:pcols,1:nscol_cosp)                  = R_UNDEF
     cldptop_isccp(1:pcols,1:nscol_cosp)              = R_UNDEF
     meantau_isccp(1:pcols)                           = R_UNDEF
@@ -2571,6 +2575,7 @@ cfodd_nicod_int = CFODD_NICOD
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
         obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
+        slwccot(1:ncol,1:nscol_cosp) = cospOUT%slwccot(:,:)
     endif
         
         
@@ -2882,6 +2887,7 @@ cfodd_nicod_int = CFODD_NICOD
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
          call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
+         call outfld('slwccot', slwccot, pcols, lchnk)
     endif    
     
     
@@ -3688,6 +3694,7 @@ allocate(x%nmultilcld(Npoints))
 allocate(x%nhetcld(Npoints))
 allocate(x%coldct(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
+allocate(x%slwccot(Npoints,Ncolumns))
     !endif
         
   end subroutine construct_cosp_outputs
@@ -4039,6 +4046,10 @@ allocate(x%obs_ntotal(Npoints,NOBSTYPE))
         deallocate(y%obs_ntotal)
         nullify(y%obs_ntotal)
      endif        
+     if (associated(y%slwccot)) then
+         deallocate(y%slwccot)
+         nullify(y%slwccot)
+     endif
         
    end subroutine destroy_cosp_outputs
 #endif
