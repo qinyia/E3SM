@@ -49,7 +49,8 @@ MODULE MOD_COSP
                                          ntau,modis_histTau,tau_binBounds,               &
                                          modis_histTauEdges,tau_binEdges,nCloudsatPrecipClass,&
                                          modis_histTauCenters,tau_binCenters,            &
-                                         cloudsat_preclvl,grLidar532_histBsct,atlid_histBsct
+                                         cloudsat_preclvl,grLidar532_histBsct,atlid_histBsct, &
+                                         SLWC_NCOT
   USE MOD_COSP_MODIS_INTERFACE,      ONLY: cosp_modis_init,       modis_IN
   USE MOD_COSP_RTTOV_INTERFACE,      ONLY: cosp_rttov_init,       rttov_IN
   USE MOD_COSP_MISR_INTERFACE,       ONLY: cosp_misr_init,        misr_IN
@@ -299,7 +300,8 @@ MODULE MOD_COSP
           cfodd_ntotal => null()       ! # of CFODD (Npoints,CFODD_NDBZE,CFODD_NICOD,CFODD_NCLASS)
      real(wp),dimension(:,:),    pointer :: &
           wr_occfreq_ntotal => null(), &! # of nonprecip/drizzle/precip (Npoints,WR_NREGIME)
-          obs_ntotal => null()          ! # of total obs/clear-sky/cloud-sky (Npoints,NOBSTYPE)
+          obs_ntotal => null(),        &! # of total obs/clear-sky/cloud-sky (Npoints,NOBSTYPE)
+          slwccot => null()             ! COT of SLWCs(Npoints,SLWC_NCOT)
      real(wp),dimension(:),      pointer :: &
           lsmallcot => null(),       & ! # of liquid clouds with COT below threshold (Npoints)
           mice => null(),            & ! # of ice clouds (Npoints)
@@ -407,7 +409,8 @@ CONTAINS
          nhetcld(:),             & ! # of heterogenous clouds (stratocumulus above/below cumulus) in continuous layer, excluded from SLWC counts
          nmultilcld(:),          & ! # of multilayer cloud subcolumns, excluded from SLWC counts
          coldct(:),              & ! # of subcolumns excluded from SLWC counts because of cloud top temp < 273 K
-         obs_ntotal(:,:)           ! # of total samples, clear-sky and cloud-sky in warmrain diags (Npoints, NOBSTYPE)
+         obs_ntotal(:,:),        & ! # of total samples, clear-sky and cloud-sky in warmrain diags (Npoints, NOBSTYPE)
+         slwccot(:,:)              ! # of SLWCs, binned by COT between 0 and 100  (Npoints, SLWC_NCOT)
          
 
     ! Initialize error reporting for output
@@ -1631,6 +1634,7 @@ CONTAINS
        allocate( nhetcld(cloudsatIN%Npoints) )
        allocate( coldct(cloudsatIN%Npoints) )
        allocate( obs_ntotal(cloudsatIN%Npoints, NOBSTYPE) )
+       allocate( slwccot(cloudsatIN%Npoints, SLWC_NCOT) )
        if ( use_vgrid ) then
           !! interporation for fixed vertical grid:
           allocate( zlev(cloudsatIN%Npoints,Nlvgrid),                         &
@@ -1679,7 +1683,7 @@ CONTAINS
                Ze_totI,                                                       & !! in
                cfodd_ntotal, wr_occfreq_ntotal,                               & !! inout
                lsmallcot, mice, lsmallreff, lbigreff,                         & !! inout
-               nmultilcld, nhetcld, coldct, obs_ntotal              ) !! inout
+               nmultilcld, nhetcld, coldct, obs_ntotal, slwccot               ) !! inout
           deallocate( zlev, t_in, tempI, frac_outI, Ze_totI )
        else  ! do not use vgrid interporation ---------------------------------------!
           !! original model grid
@@ -1698,7 +1702,7 @@ CONTAINS
                cloudsatDBZe,                                                  & !! in
                cfodd_ntotal, wr_occfreq_ntotal,                               & !! inout
                lsmallcot, mice, lsmallreff, lbigreff,                         & !! inout
-               nmultilcld, nhetcld, coldct, obs_ntotal           ) !! inout
+               nmultilcld, nhetcld, coldct, obs_ntotal, slwccot               ) !! inout
        endif  !! use_vgrid or not
 
        ! Store, when necessary
@@ -1731,6 +1735,9 @@ CONTAINS
        endif
        if ( associated(cospOUT%obs_ntotal) ) then
           cospOUT%obs_ntotal(ij:ik,:) = obs_ntotal
+       endif
+       if ( associated(cospOUT%slwccot) ) then
+          cospOUT%slwccot(ij:ik,:) = slwccot
        endif
     endif
     
@@ -1805,6 +1812,7 @@ CONTAINS
     if (allocated(nmultilcld))            deallocate(nmultilcld)
     if (allocated(coldct))                deallocate(coldct)
     if (allocated(obs_ntotal))            deallocate(obs_ntotal)
+    if (allocated(slwccot))               deallocate(slwccot)
 
   end function COSP_SIMULATOR
   ! ######################################################################################
@@ -2389,10 +2397,11 @@ CONTAINS
              if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
              if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
              if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-             if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+             if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
              if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
              if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
              if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+             if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
           endif
        endif
        
@@ -2432,10 +2441,11 @@ CONTAINS
              if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
              if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
              if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-             if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+             if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
              if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
              if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
              if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+             if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
           endif
        endif
     endif
@@ -2520,10 +2530,11 @@ CONTAINS
              if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
              if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
              if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-             if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+             if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
              if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
              if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
              if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+             if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
           endif
        endif
     endif
@@ -2724,10 +2735,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
     endif
 
@@ -2786,10 +2798,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
     endif
     if (any([Lisccp_subcolumn, Lisccp_column, Lrttov_column])) then
@@ -2965,10 +2978,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
     endif
     if (any([Lrttov_column,Lcloudsat_column,Lcalipso_column,Lradar_lidar_tcc,Llidar_only_freq_cloud, &
@@ -3016,10 +3030,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
     endif
     if (any([Lrttov_column,Lcalipso_column,Lparasol_column])) then
@@ -3626,10 +3641,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
        if (any(cospIN%kr_vol_cloudsat .lt. 0)) then
           nError=nError+1
@@ -3653,10 +3669,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
        if (any(cospIN%g_vol_cloudsat .lt. 0)) then
           nError=nError+1
@@ -3680,10 +3697,11 @@ CONTAINS
           if (associated(cospOUT%mice)) cospOUT%mice(:) = R_UNDEF
           if (associated(cospOUT%lsmallreff)) cospOUT%lsmallreff(:) = R_UNDEF
           if (associated(cospOUT%lbigreff)) cospOUT%lbigreff(:) = R_UNDEF
-          if (associated(cospOUT%nmulitilcld)) cospOUT%nmultilcld(:) = R_UNDEF
+          if (associated(cospOUT%nmultilcld)) cospOUT%nmultilcld(:) = R_UNDEF
           if (associated(cospOUT%nhetcld)) cospOUT%nhetcld(:) = R_UNDEF
           if (associated(cospOUT%coldct)) cospOUT%coldct(:) = R_UNDEF
           if (associated(cospOUT%obs_ntotal)) cospOUT%obs_ntotal(:,:) = R_UNDEF
+          if (associated(cospOUT%slwccot)) cospOUT%slwccot(:,:) = R_UNDEF
        endif
     endif
     !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

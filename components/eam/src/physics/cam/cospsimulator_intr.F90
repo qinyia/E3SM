@@ -31,7 +31,8 @@ module cospsimulator_intr
        reffICE_binCenters, reffLIQ_binEdges, reffLIQ_binCenters, LIDAR_NTYPE,          &
        nCloudsatPrecipClass, CFODD_NDBZE, CFODD_NICOD, CFODD_HISTDBZEedges,            &
        CFODD_HISTDBZEcenters, CFODD_HISTICODedges, CFODD_HISTICODcenters,              &
-       CFODD_NCLASS, WR_NREGIME, NOBSTYPE,                                             &
+       CFODD_NCLASS, WR_NREGIME, NOBSTYPE, SLWC_NCOT, SLWC_HISTCOT,                    &
+       SLWC_HISTCOTedges, SLWC_HISTCOTcenters,   &
        nsza_cosp         => PARASOL_NREFL,       &
        nprs_cosp         => npres,               &
        ntau_cosp         => ntau,                &
@@ -74,7 +75,8 @@ module cospsimulator_intr
        nscol_cosp,  &     ! Number of subcolumns, use namelist input Ncolumns to set.
        nht_cosp,    &     ! Number of height for COSP radar and calipso simulator outputs.  
        cfodd_ndbze_int, & !  *set to 40 if csat_vgrid=.true., else set to Nlr*
-       cfodd_nicod_int
+       cfodd_nicod_int, &
+       slwc_ncot_int
   
   ! ######################################################################################
   ! Bin-boundaries for mixed dimensions. Calculated in cospsetupvales OR in cosp_config.F90
@@ -100,7 +102,9 @@ module cospsimulator_intr
   real(r8), target :: cfodddbze_binCenters_cosp(CFODD_NDBZE)
   real(r8), target :: cfoddicod_binEdges_cosp(2,CFODD_NICOD)
   real(r8), target :: cfoddicod_binCenters_cosp(CFODD_NICOD)
-
+  real(r8), target :: slwchistcot_binEdges_cosp(2,SLWC_NCOT)
+  real(r8), target :: slwchistcot_binCenters_cosp(SLWC_NCOT)
+  
   real(r8) :: htmlmid_cosp(nhtml_cosp)                     ! Model level height midpoints for output
   integer  :: prstau_cosp(nprs_cosp*ntau_cosp)             ! ISCCP mixed output dimension index
   integer  :: prstau_cosp_modis(nprs_cosp*ntau_cosp_modis) ! MODIS mixed output dimension index
@@ -189,7 +193,7 @@ module cospsimulator_intr
   integer, parameter :: Naero = 1                ! Number of aerosol species (Not used) (1)
   integer, parameter :: Nprmts_max_aero = 1      ! Max # params for aerosol size distributions (not used) (1)
   integer :: lidar_ice_type = 0                  ! Ice particle shape in lidar calculations
-                                                 ! (0=ice-spheres ; 1=ice-non-spherical) (0)
+                                                 ! (0=ice-spheres ; 1=ice-non-spherical) (0)temperature
   integer, parameter :: overlap = 3              ! overlap type: 1=max, 2=rand, 3=max/rand (3)
 
   !! namelist variables for COSP input related to ISCCP simulator
@@ -350,6 +354,7 @@ CONTAINS
 
 cfodd_ndbze_int = CFODD_NDBZE
 cfodd_nicod_int = CFODD_NICOD
+slwc_ncot_int = SLWC_NCOT
     
     ! Set COSP call frequency, from namelist.
     cosp_nradsteps = cosp_nradsteps_in
@@ -689,6 +694,10 @@ cfodd_nicod_int = CFODD_NICOD
              'COSP mean ICOD for simulator CFODD output', '1',                &
              cfoddicod_binCenters_cosp, bounds_name='cosp_cfodd_icod_bnds',   &
              bounds=cfoddicod_binEdges_cosp)
+        call add_hist_coord('cosp_slwc_cot', SLWC_NCOT,                       &
+             'COSP mean COT of SLWCs', '1',                                   &
+             slwchistcot_binCenters_cosp, bounds_name='cosp_slwc_cot_bnds',   &
+             bounds=slwchistcot_binEdges_cosp)
     endif
     
 #endif
@@ -1093,6 +1102,7 @@ cfodd_nicod_int = CFODD_NICOD
     !Warm rain joint MODIS and CloudSat products
     if ((lradar_sim) .and. (lmodis_sim)) then
         ! int ncfodd1 ( time, cfodd_ndbze, cfodd_nicod, loc)
+        ! int slwccot ( time, slwc_ncot, loc)
         call addfld ('CFODD_NTOTAL1',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
              'I','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld ('CFODD_NTOTAL2',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
@@ -1105,7 +1115,9 @@ cfodd_nicod_int = CFODD_NICOD
              'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)    
         call addfld ('CFODD_NTOTAL3_CS',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
              'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
-             
+        call addfld ('SLWC_COT',(/'cosp_slwc_cot' /),&
+             'I','1','# of SLWCs binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
+             fill_value=R_UNDEF)
         ! axes for CFODD - I think you don't need this because its a history coordinate
         ! float CFODD_NDBZE (cfodd_ndbze) cloudsat_equivalent_reflectivity_factor
 !        call addfld('CFODD_NDBZE',(/'cosp_cfodd_ndbze'/),'A', 'dBZ', &
@@ -1122,6 +1134,7 @@ cfodd_nicod_int = CFODD_NICOD
         call add_default ('CFODD_NTOTAL1_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL2_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL3_CS',cosp_histfile_num, ' ')
+        call add_default ('SLWC_COT',cosp_histfile_num,' ')
         !call add_default ('CFODD_NDBZE',cosp_histfile_num, ' ')
         !call add_default ('CFODD_NICOD',cosp_histfile_num, ' ')
         
@@ -1147,7 +1160,6 @@ cfodd_nicod_int = CFODD_NICOD
         call addfld('obs_ntotal1', horiz_only, 'I', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal2', horiz_only, 'I', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal3', horiz_only, 'I', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('slwccot', (/'cosp_scol'/), 'I', '1', 'Cloud optical thickness of SLWCs only', flag_xyfill=.true., fill_value=R_UNDEF)
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
@@ -1161,7 +1173,6 @@ cfodd_nicod_int = CFODD_NICOD
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
         call add_default('obs_ntotal2',cosp_histfile_num, ' ')
         call add_default('obs_ntotal3',cosp_histfile_num, ' ' )
-        call add_default('slwccot', cosp_histfile_num,' ' )
     endif
         
     
@@ -1664,6 +1675,7 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: cfodd_ntotal1_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal2_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal3_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
+    real(r8) :: slwc_cot(pcols,SLWC_NCOT)
     real(r8) :: npdfcld(pcols)
     real(r8) :: npdfdrz(pcols)
     real(r8) :: npdfrain(pcols)
@@ -1678,7 +1690,6 @@ cfodd_nicod_int = CFODD_NICOD
     real(r8) :: obs_ntotal1(pcols)
     real(r8) :: obs_ntotal2(pcols)
     real(r8) :: obs_ntotal3(pcols)
-    real(r8) :: slwccot(pcols,nscol_cosp)
     
     real(r8),dimension(pcols,nhtml_cosp*nscol_cosp) :: &
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
@@ -1724,6 +1735,7 @@ cfodd_nicod_int = CFODD_NICOD
     cfodd_ntotal1(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal2(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal3(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
+    slwc_cot(1:pcols,1:SLWC_NCOT)      = R_UNDEF
     
     
     ! (all CAM output variables. including collapsed variables)
@@ -1789,7 +1801,6 @@ cfodd_nicod_int = CFODD_NICOD
     obs_ntotal1(1:pcols)                             = R_UNDEF
     obs_ntotal2(1:pcols)                             = R_UNDEF
     obs_ntotal3(1:pcols)                             = R_UNDEF
-    slwccot(1:pcols,1:nscol_cosp)                    = R_UNDEF
     tau_isccp(1:pcols,1:nscol_cosp)                  = R_UNDEF
     cldptop_isccp(1:pcols,1:nscol_cosp)              = R_UNDEF
     meantau_isccp(1:pcols)                           = R_UNDEF
@@ -2575,7 +2586,7 @@ cfodd_nicod_int = CFODD_NICOD
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
         obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
-        slwccot(1:ncol,1:nscol_cosp) = cospOUT%slwccot(:,:)
+        slwc_cot(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:)
     endif
         
         
@@ -2887,7 +2898,7 @@ cfodd_nicod_int = CFODD_NICOD
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
          call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
-         call outfld('slwccot', slwccot, pcols, lchnk)
+         call outfld('SLWC_COT', slwc_cot, pcols, lchnk)
     endif    
     
     
@@ -3694,7 +3705,7 @@ allocate(x%nmultilcld(Npoints))
 allocate(x%nhetcld(Npoints))
 allocate(x%coldct(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
-allocate(x%slwccot(Npoints,Ncolumns))
+allocate(x%slwccot(Npoints,SLWC_NCOT))
     !endif
         
   end subroutine construct_cosp_outputs
