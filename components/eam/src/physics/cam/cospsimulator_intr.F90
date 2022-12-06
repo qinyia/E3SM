@@ -320,6 +320,8 @@ CONTAINS
     cfodddbze_binCenters_cosp = CFODD_HISTDBZEcenters
     cfoddicod_binCenters_cosp = CFODD_HISTICODcenters
     cfoddicod_binEdges_cosp = CFODD_HISTICODedges
+    slwchistcot_binCenters_cosp = SLWC_HISTCOTcenters
+    slwchistcot_binEdges_cosp = SLWC_HISTCOTedges
                                   
     ! Initialize the distributional parameters for hydrometeors in radar simulator. In COSPv1.4, this was declared in
     ! cosp_defs.f.
@@ -1115,8 +1117,14 @@ slwc_ncot_int = SLWC_NCOT
              'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)    
         call addfld ('CFODD_NTOTAL3_CS',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
              'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld ('SLWC_COT',(/'cosp_slwc_cot' /),&
-             'I','1','# of SLWCs binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
+        call addfld ('SLWC_COT1',(/'cosp_slwc_cot' /),&
+             'A','1','# of SLWCs (05 < Reff < 12 micron) binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
+             fill_value=R_UNDEF)
+        call addfld ('SLWC_COT2',(/'cosp_slwc_cot' /), 'A','1',&
+             '# of SLWCs (12 < Reff < 18 micron) binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
+             fill_value=R_UNDEF)
+        call addfld ('SLWC_COT3',(/'cosp_slwc_cot' /), 'A','1',&
+             '# of SLWCs (18 < Reff < 35 micron) binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
              fill_value=R_UNDEF)
         ! axes for CFODD - I think you don't need this because its a history coordinate
         ! float CFODD_NDBZE (cfodd_ndbze) cloudsat_equivalent_reflectivity_factor
@@ -1134,7 +1142,9 @@ slwc_ncot_int = SLWC_NCOT
         call add_default ('CFODD_NTOTAL1_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL2_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL3_CS',cosp_histfile_num, ' ')
-        call add_default ('SLWC_COT',cosp_histfile_num,' ')
+        call add_default ('SLWC_COT1',cosp_histfile_num,' ')
+        call add_default ('SLWC_COT2',cosp_histfile_num,' ')
+        call add_default ('SLWC_COT3',cosp_histfile_num,' ')
         !call add_default ('CFODD_NDBZE',cosp_histfile_num, ' ')
         !call add_default ('CFODD_NICOD',cosp_histfile_num, ' ')
         
@@ -1675,7 +1685,9 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: cfodd_ntotal1_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal2_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal3_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
-    real(r8) :: slwc_cot(pcols,SLWC_NCOT)
+    real(r8) :: slwc_cot1(pcols,SLWC_NCOT)
+    real(r8) :: slwc_cot2(pcols,SLWC_NCOT)
+    real(r8) :: slwc_cot3(pcols,SLWC_NCOT)
     real(r8) :: npdfcld(pcols)
     real(r8) :: npdfdrz(pcols)
     real(r8) :: npdfrain(pcols)
@@ -1735,7 +1747,9 @@ slwc_ncot_int = SLWC_NCOT
     cfodd_ntotal1(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal2(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal3(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
-    slwc_cot(1:pcols,1:SLWC_NCOT)      = R_UNDEF
+    slwc_cot1(1:pcols,1:SLWC_NCOT)      = R_UNDEF
+    slwc_cot2(1:pcols,1:SLWC_NCOT)      = R_UNDEF
+    slwc_cot3(1:pcols,1:SLWC_NCOT)      = R_UNDEF
     
     
     ! (all CAM output variables. including collapsed variables)
@@ -2586,7 +2600,9 @@ slwc_ncot_int = SLWC_NCOT
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
         obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
-        slwc_cot(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:)
+        slwc_cot1(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,1)
+        slwc_cot2(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,2)
+        slwc_cot3(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,3)
     endif
         
         
@@ -2898,7 +2914,9 @@ slwc_ncot_int = SLWC_NCOT
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
          call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
-         call outfld('SLWC_COT', slwc_cot, pcols, lchnk)
+         call outfld('SLWC_COT1', slwc_cot1, pcols, lchnk)
+         call outfld('SLWC_COT2', slwc_cot2, pcols, lchnk)
+         call outfld('SLWC_COT3', slwc_cot3, pcols, lchnk)
     endif    
     
     
@@ -3705,7 +3723,7 @@ allocate(x%nmultilcld(Npoints))
 allocate(x%nhetcld(Npoints))
 allocate(x%coldct(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
-allocate(x%slwccot(Npoints,SLWC_NCOT))
+allocate(x%slwccot(Npoints,SLWC_NCOT,CFODD_NCLASS))
     !endif
         
   end subroutine construct_cosp_outputs
