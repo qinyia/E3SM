@@ -1691,7 +1691,7 @@ CONTAINS
           where (frac_outI .lt. 0) frac_outI = 0._wp                          !CMB setting large negative numbers to 0
           call cosp_diag_warmrain(                                            &
                cloudsatIN%Npoints, cloudsatIN%Ncolumns, Nlvgrid,              & !! in
-               tempI, zlev,                                                   & !! in
+               tempI, zlev, cospgridIN%sunlit,                                & !! in
                cospOUT%modis_Liquid_Water_Path_Mean,                          & !! in
                cospOUT%modis_Optical_Thickness_Water_Mean,                    & !! in
                cospOUT%modis_Cloud_Particle_Size_Water_Mean,                  & !! in
@@ -1711,7 +1711,7 @@ CONTAINS
           !! original model grid
           call cosp_diag_warmrain(                                            &
                cloudsatIN%Npoints, cloudsatIN%Ncolumns, cospIN%Nlevels,       & !! in
-               cospgridIN%at, cospgridIN%hgt_matrix,                          & !! in
+               cospgridIN%at, cospgridIN%hgt_matrix, cospgridIN%sunlit,       & !! in
                cospOUT%modis_Liquid_Water_Path_Mean,                          & !! in
                cospOUT%modis_Optical_Thickness_Water_Mean,                    & !! in
                cospOUT%modis_Cloud_Particle_Size_Water_Mean,                  & !! in
