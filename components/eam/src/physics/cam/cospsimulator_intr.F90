@@ -687,7 +687,7 @@ slwc_ncot_int = SLWC_NCOT
             bounds_name='cosp_reffliq_bnds',bounds=reffLIQ_binEdges_cosp)      
     end if
     
-    if ((lmodis_sim) .and. (lradar_sim)) then
+    if ((lmodis_sim) .and. (lradar_sim) .and. (llidar_sim)) then
         call add_hist_coord('cosp_cfodd_dbze', CFODD_NDBZE,                   &
              'COSP mean dBZe for simulator CFODD output', 'dBZ',              &
              cfodddbze_binCenters_cosp, bounds_name='cosp_cfodd_dbze_bnds',   &
@@ -1102,21 +1102,25 @@ slwc_ncot_int = SLWC_NCOT
     end if
     
     !Warm rain joint MODIS and CloudSat products
-    if ((lradar_sim) .and. (lmodis_sim)) then
+    if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
         ! int ncfodd1 ( time, cfodd_ndbze, cfodd_nicod, loc)
         ! int slwccot ( time, slwc_ncot, loc)
         call addfld ('CFODD_NTOTAL1',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+             'A','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld ('CFODD_NTOTAL2',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+             'A','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld ('CFODD_NTOTAL3',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+             'A','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('CFODD_NTOTAL4',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
+             'A','1','# of CFODD CALIPSO detected', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('CFODD_NTOTAL1_CS',(/'cosp_cfodd_dbze', 'cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+             'A','1','# of CFODD (05 < Reff < 12 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('CFODD_NTOTAL2_CS',(/'cosp_cfodd_dbze', 'cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)    
+             'A','1','# of CFODD (12 < Reff < 18 micron)', flag_xyfill=.true., fill_value=R_UNDEF)    
         call addfld ('CFODD_NTOTAL3_CS',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
-             'I','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+             'A','1','# of CFODD (18 < Reff < 35 micron)', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('CFODD_NTOTAL4_CS',(/'cosp_cfodd_dbze','cosp_cfodd_icod' /),&
+             'A','1','# of CFODD CALIPSO detected', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld ('SLWC_COT1',(/'cosp_slwc_cot' /),&
              'A','1','# of SLWCs (05 < Reff < 12 micron) binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
              fill_value=R_UNDEF)
@@ -1126,6 +1130,10 @@ slwc_ncot_int = SLWC_NCOT
         call addfld ('SLWC_COT3',(/'cosp_slwc_cot' /), 'A','1',&
              '# of SLWCs (18 < Reff < 35 micron) binned by MODIS cloud optical thickness', flag_xyfill=.true.,&
              fill_value=R_UNDEF)
+        call addfld ('SLWC_COT4',(/'cosp_slwc_cot' /), 'A','1',&
+             '# of SLWCs binned by CALIPSO cloud optical thickness', flag_xyfill=.true.,&
+             fill_value=R_UNDEF)
+
         ! axes for CFODD - I think you don't need this because its a history coordinate
         ! float CFODD_NDBZE (cfodd_ndbze) cloudsat_equivalent_reflectivity_factor
 !        call addfld('CFODD_NDBZE',(/'cosp_cfodd_ndbze'/),'A', 'dBZ', &
@@ -1139,12 +1147,15 @@ slwc_ncot_int = SLWC_NCOT
         call add_default ('CFODD_NTOTAL1',cosp_histfile_num,' ') 
         call add_default ('CFODD_NTOTAL2',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL3',cosp_histfile_num, ' ')
+        call add_default ('CFODD_NTOTAL4',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL1_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL2_CS',cosp_histfile_num, ' ')
         call add_default ('CFODD_NTOTAL3_CS',cosp_histfile_num, ' ')
+        call add_default ('CFODD_NTOTAL4_CS',cosp_histfile_num, ' ')
         call add_default ('SLWC_COT1',cosp_histfile_num,' ')
         call add_default ('SLWC_COT2',cosp_histfile_num,' ')
         call add_default ('SLWC_COT3',cosp_histfile_num,' ')
+        call add_default ('SLWC_COT4',cosp_histfile_num,' ')
         !call add_default ('CFODD_NDBZE',cosp_histfile_num, ' ')
         !call add_default ('CFODD_NICOD',cosp_histfile_num, ' ')
         
@@ -1154,22 +1165,23 @@ slwc_ncot_int = SLWC_NCOT
         
         !CB Continue here adding npdfdrz and npdfrain 
         ! int npdfdrz (loc), "number_of_slwc_drizzle"
-        call addfld ('npdfdrz', horiz_only, 'I', '1', '# of Drizzling Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfdrz', horiz_only, 'A', '1', '# of Drizzling Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
         ! int npdfrain (loc), "number_of_slwc_precip"
-        call addfld ('npdfrain', horiz_only, 'I', '1', '# of Precipitating Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfrain', horiz_only, 'A', '1', '# of Precipitating Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
         
         !CB Adding counts of other cloud types not included in diagnostics
         ! int lsmallcot (loc), "number_of_slwc_lowCOT"
-        call addfld ('lsmallcot', horiz_only, 'I', '1', '# of Liquid Clouds with low COT', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('mice', horiz_only, 'I', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('lsmallreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('lbigreff', horiz_only, 'I', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('nmultilcld', horiz_only, 'I', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('nhetcld', horiz_only, 'I', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('coldct', horiz_only, 'I', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('obs_ntotal1', horiz_only, 'I', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('obs_ntotal2', horiz_only, 'I', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('obs_ntotal3', horiz_only, 'I', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('lsmallcot', horiz_only, 'A', '1', '# of Liquid Clouds with low COT', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('mice', horiz_only, 'A', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('lsmallreff', horiz_only, 'A', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('lbigreff', horiz_only, 'A', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nmultilcld', horiz_only, 'A', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nhetcld', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('coldct', horiz_only, 'A', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('calice', horiz_only, 'A', '1', '# of Subcolumns with ice detected by CALIPSO', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('obs_ntotal1', horiz_only, 'A', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('obs_ntotal2', horiz_only, 'A', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('obs_ntotal3', horiz_only, 'A', '1', '# of cloud-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
@@ -1180,6 +1192,7 @@ slwc_ncot_int = SLWC_NCOT
         call add_default('nmultilcld',cosp_histfile_num, ' ')
         call add_default('nhetcld',cosp_histfile_num,' ')
         call add_default('coldct',cosp_histfile_num, ' ')
+        call add_default('calice',cosp_histfile_num, ' ')
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
         call add_default('obs_ntotal2',cosp_histfile_num, ' ')
         call add_default('obs_ntotal3',cosp_histfile_num, ' ' )
@@ -1682,12 +1695,15 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: cfodd_ntotal1(pcols,CFODD_NDBZE,CFODD_NICOD)
     real(r8) :: cfodd_ntotal2(pcols,CFODD_NDBZE,CFODD_NICOD)
     real(r8) :: cfodd_ntotal3(pcols,CFODD_NDBZE,CFODD_NICOD)
+    real(r8) :: cfodd_ntotal4(pcols,CFODD_NDBZE,CFODD_NICOD)
     real(r8) :: cfodd_ntotal1_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal2_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: cfodd_ntotal3_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
+    real(r8) :: cfodd_ntotal4_cs(pcols,CFODD_NDBZE*CFODD_NICOD)
     real(r8) :: slwc_cot1(pcols,SLWC_NCOT)
     real(r8) :: slwc_cot2(pcols,SLWC_NCOT)
     real(r8) :: slwc_cot3(pcols,SLWC_NCOT)
+    real(r8) :: slwc_cot4(pcols,SLWC_NCOT)
     real(r8) :: npdfcld(pcols)
     real(r8) :: npdfdrz(pcols)
     real(r8) :: npdfrain(pcols)
@@ -1698,6 +1714,7 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: nmultilcld(pcols)
     real(r8) :: nhetcld(pcols)
     real(r8) :: coldct(pcols)
+    real(r8) :: calice(pcols)
     real(r8) :: obs_ntotal(pcols,NOBSTYPE)
     real(r8) :: obs_ntotal1(pcols)
     real(r8) :: obs_ntotal2(pcols)
@@ -1747,9 +1764,11 @@ slwc_ncot_int = SLWC_NCOT
     cfodd_ntotal1(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal2(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     cfodd_ntotal3(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
+    cfodd_ntotal4(1:pcols,1:CFODD_NDBZE,1:CFODD_NICOD) = R_UNDEF
     slwc_cot1(1:pcols,1:SLWC_NCOT)      = R_UNDEF
     slwc_cot2(1:pcols,1:SLWC_NCOT)      = R_UNDEF
     slwc_cot3(1:pcols,1:SLWC_NCOT)      = R_UNDEF
+    slwc_cot4(1:pcols,1:SLWC_NCOT)      = R_UNDEF
     
     
     ! (all CAM output variables. including collapsed variables)
@@ -1801,6 +1820,7 @@ slwc_ncot_int = SLWC_NCOT
     cfodd_ntotal1_cs(1:pcols,1:CFODD_NDBZE*CFODD_NICOD) = R_UNDEF
     cfodd_ntotal2_cs(1:pcols,1:CFODD_NDBZE*CFODD_NICOD) = R_UNDEF
     cfodd_ntotal3_cs(1:pcols,1:CFODD_NDBZE*CFODD_NICOD) = R_UNDEF
+    cfodd_ntotal4_cs(1:pcols,1:CFODD_NDBZE*CFODD_NICOD) = R_UNDEF
     npdfcld(1:pcols)                                 = R_UNDEF
     npdfdrz(1:pcols)                                 = R_UNDEF
     npdfrain(1:pcols)                                = R_UNDEF
@@ -1811,6 +1831,7 @@ slwc_ncot_int = SLWC_NCOT
     nmultilcld(1:pcols)                              = R_UNDEF
     nhetcld(1:pcols)                                 = R_UNDEF
     coldct(1:pcols)                                  = R_UNDEF
+    calice(1:pcols)                                  = R_UNDEF
     obs_ntotal(1:pcols,1:NOBSTYPE)                   = R_UNDEF
     obs_ntotal1(1:pcols)                             = R_UNDEF
     obs_ntotal2(1:pcols)                             = R_UNDEF
@@ -2583,10 +2604,11 @@ slwc_ncot_int = SLWC_NCOT
     endif
  
     
-    if ((lradar_sim) .and. (lmodis_sim)) then
+    if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
         cfodd_ntotal1(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,1)
         cfodd_ntotal2(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,2)
         cfodd_ntotal3(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,3)
+        cfodd_ntotal4(1:ncol,1:CFODD_NDBZE,1:CFODD_NICOD) = cospOUT%cfodd_ntotal(:,:,:,4)
         npdfcld(1:ncol) = cospOUT%wr_occfreq_ntotal(:,1)
         npdfdrz(1:ncol) = cospOUT%wr_occfreq_ntotal(:,2)
         npdfrain(1:ncol) = cospOUT%wr_occfreq_ntotal(:,3)
@@ -2597,12 +2619,14 @@ slwc_ncot_int = SLWC_NCOT
         nmultilcld(1:ncol) = cospOUT%nmultilcld(:)
         nhetcld(1:ncol) = cospOUT%nhetcld(:)
         coldct(1:ncol) = cospOUT%coldct(:)
+        calice(1:ncol) = cospOUT%calice(:)
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
         obs_ntotal3(1:ncol) = cospOUT%obs_ntotal(:,3)
         slwc_cot1(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,1)
         slwc_cot2(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,2)
         slwc_cot3(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,3)
+        slwc_cot4(1:ncol,1:SLWC_NCOT) = cospOUT%slwccot(:,:,4)
     endif
         
         
@@ -2627,7 +2651,7 @@ slwc_ncot_int = SLWC_NCOT
           end do
        endif
        
-       if ((lradar_sim) .and. (lmodis_sim)) then
+       if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
            ! CAM cfodd_ntotal1 (time,cfodd_ndbze,cfodd_nicod,profile)
            do ih=1,cfodd_nicod_int
                do id=1,cfodd_ndbze_int
@@ -2635,6 +2659,7 @@ slwc_ncot_int = SLWC_NCOT
                    cfodd_ntotal1_cs(i,idic) = cfodd_ntotal1(i,id,ih)  ! cfodd_ntotal1_cs(pcols,cfodd_ndbze*cfodd_icod)
                    cfodd_ntotal2_cs(i,idic) = cfodd_ntotal2(i,id,ih)
                    cfodd_ntotal3_cs(i,idic) = cfodd_ntotal3(i,id,ih)
+                   cfodd_ntotal4_cs(i,idic) = cfodd_ntotal4(i,id,ih)
                 end do
             end do
        endif
@@ -2885,7 +2910,7 @@ slwc_ncot_int = SLWC_NCOT
        call outfld('CS_PIA',        cloudsatpia,      pcols, lchnk)
     end if
     
-    if ((lradar_sim) .and. (lmodis_sim)) then
+    if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
         where (cfodd_ntotal1_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) .eq. R_UNDEF)
             cfodd_ntotal1_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) = 0.0_r8
         end where
@@ -2897,10 +2922,15 @@ slwc_ncot_int = SLWC_NCOT
          where (cfodd_ntotal3_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) .eq. R_UNDEF)
             cfodd_ntotal3_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) = 0.0_r8
          end where
+
+         where (cfodd_ntotal4_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) .eq. R_UNDEF)
+            cfodd_ntotal4_cs(:ncol,:CFODD_NDBZE*CFODD_NICOD) = 0.0_r8
+         end where
          
          call outfld('CFODD_NTOTAL1_CS', cfodd_ntotal1_cs, pcols, lchnk)
          call outfld('CFODD_NTOTAL2_CS', cfodd_ntotal2_cs, pcols, lchnk)
          call outfld('CFODD_NTOTAL3_CS', cfodd_ntotal3_cs, pcols, lchnk)
+         call outfld('CFODD_NTOTAL4_CS', cfodd_ntotal4_cs, pcols, lchnk)
          call outfld('npdfcld', npdfcld, pcols, lchnk)
          call outfld('npdfdrz', npdfdrz, pcols, lchnk)
          call outfld('npdfrain', npdfrain, pcols, lchnk)
@@ -2911,12 +2941,14 @@ slwc_ncot_int = SLWC_NCOT
          call outfld('nmultilcld', nmultilcld, pcols, lchnk)
          call outfld('nhetcld', nhetcld, pcols, lchnk)
          call outfld('coldct', coldct, pcols, lchnk)
+         call outfld('calice', calice, pcols, lchnk)
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
          call outfld('obs_ntotal3', obs_ntotal3, pcols, lchnk)
          call outfld('SLWC_COT1', slwc_cot1, pcols, lchnk)
          call outfld('SLWC_COT2', slwc_cot2, pcols, lchnk)
          call outfld('SLWC_COT3', slwc_cot3, pcols, lchnk)
+         call outfld('SLWC_COT4', slwc_cot4, pcols, lchnk)
     endif    
     
     
@@ -3722,6 +3754,7 @@ allocate(x%lbigreff(Npoints))
 allocate(x%nmultilcld(Npoints))
 allocate(x%nhetcld(Npoints))
 allocate(x%coldct(Npoints))
+allocate(x%calice(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
 allocate(x%slwccot(Npoints,SLWC_NCOT,CFODD_NCLASS))
     !endif
@@ -4070,6 +4103,10 @@ allocate(x%slwccot(Npoints,SLWC_NCOT,CFODD_NCLASS))
      if (associated(y%coldct)) then
         deallocate(y%coldct)
         nullify(y%coldct)
+     endif
+     if (associated(y%calice)) then
+        deallocate(y%calice)
+        nullify(y%calice)
      endif
      if (associated(y%obs_ntotal)) then
         deallocate(y%obs_ntotal)
