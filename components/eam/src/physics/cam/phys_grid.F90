@@ -1359,6 +1359,8 @@ contains
                         min_process_nchunks,',',max_process_nchunks,')'
       write(iulog,*) '  (min,max) # of physics columns per process: (',  &
                         min_process_ncols,',',max_process_ncols,')'
+      write(iulog,*) '  chunk indices for pcol 230:                 (',  &
+                        FINDLOC(lchunks(:)%gcol(:),230),')' 
       write(iulog,*) ''
     endif
 
