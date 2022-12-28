@@ -1168,6 +1168,9 @@ slwc_ncot_int = SLWC_NCOT
         call addfld ('npdfdrz', horiz_only, 'A', '1', '# of Drizzling Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
         ! int npdfrain (loc), "number_of_slwc_precip"
         call addfld ('npdfrain', horiz_only, 'A', '1', '# of Precipitating Clouds"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfcld_cal', horiz_only, 'A', '1', '# of Non-Precipitating Clouds CALIPSO only"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfdrz_cal', horiz_only, 'A', '1', '# of Drizzling Clouds CALIPSO only"', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld ('npdfrain_cal', horiz_only, 'A', '1', '# of Precipitating Clouds CALIPSO only"', flag_xyfill=.true., fill_value=R_UNDEF)
         
         !CB Adding counts of other cloud types not included in diagnostics
         ! int lsmallcot (loc), "number_of_slwc_lowCOT"
@@ -1185,6 +1188,9 @@ slwc_ncot_int = SLWC_NCOT
         call add_default('npdfcld',cosp_histfile_num,' ')
         call add_default('npdfdrz',cosp_histfile_num,' ')
         call add_default('npdfrain',cosp_histfile_num,' ')
+        call add_default('npdfcld_cal',cosp_histfile_num,' ')
+        call add_default('npdfdrz_cal',cosp_histfile_num,' ')
+        call add_default('npdfrain_cal',cosp_histfile_num,' ')
         call add_default('lsmallcot',cosp_histfile_num,' ')
         call add_default('mice',cosp_histfile_num,' ')
         call add_default('lsmallreff',cosp_histfile_num,' ')
@@ -1345,6 +1351,7 @@ slwc_ncot_int = SLWC_NCOT
     use mod_cosp_config,      only: R_UNDEF,parasol_nrefl, Nlvgrid, vgrid_zl, vgrid_zu
     use mod_cosp,             only: cosp_simulator
     use mod_quickbeam_optics, only: size_distribution
+    use time_manager,         only: get_nstep
 #endif
 
     ! ######################################################################################
@@ -1366,6 +1373,7 @@ slwc_ncot_int = SLWC_NCOT
     integer :: lchnk                             ! chunk identifier
     integer :: ncol                              ! number of active atmospheric columns
     integer :: i,k,ip,it,ipt,ih,id,ihd,is,ihs,isc,ihsc,ihm,ihmt,ihml,itim_old,ifld,idic 
+    integer :: nstep                             ! CMB timestep counter
     
     ! Variables for day/nite and orbital subsetting
     ! Gathered indicies of day and night columns 
@@ -1707,6 +1715,9 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: npdfcld(pcols)
     real(r8) :: npdfdrz(pcols)
     real(r8) :: npdfrain(pcols)
+    real(r8) :: npdfcld_cal(pcols)
+    real(r8) :: npdfdrz_cal(pcols)
+    real(r8) :: npdfrain_cal(pcols)
     real(r8) :: lsmallcot(pcols)
     real(r8) :: mice(pcols)
     real(r8) :: lsmallreff(pcols)
@@ -1744,6 +1755,8 @@ slwc_ncot_int = SLWC_NCOT
     ! Find the chunk and ncol from the state vector
     lchnk = state%lchnk    ! state variable contains a number of columns, one chunk
     ncol  = state%ncol     ! number of columns in the chunk
+    nstep = get_nstep()    ! CMB timestep counter
+    print*,"nstep: ", nstep
     
     ! Initialize temporary variables as R_UNDEF - need to do this otherwise array expansion puts garbage in history
     ! file for columns over which COSP did make calculations.
@@ -1824,6 +1837,9 @@ slwc_ncot_int = SLWC_NCOT
     npdfcld(1:pcols)                                 = R_UNDEF
     npdfdrz(1:pcols)                                 = R_UNDEF
     npdfrain(1:pcols)                                = R_UNDEF
+    npdfcld_cal(1:pcols)                             = R_UNDEF
+    npdfdrz_cal(1:pcols)                             = R_UNDEF
+    npdfrain_cal(1:pcols)                            = R_UNDEF
     lsmallcot(1:pcols)                               = R_UNDEF
     mice(1:pcols)                                    = R_UNDEF
     lsmallreff(1:pcols)                              = R_UNDEF
@@ -1889,6 +1905,8 @@ slwc_ncot_int = SLWC_NCOT
     clrlmodis(1:pcols,1:ntau_cosp_modis,1:numMODISReffLiqBins)   = R_UNDEF ! +cosp2
     tau067_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     emis11_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
+    cal_tautot_ice(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
+    cal_tautot_liq(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     asym34_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     ssa34_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     fracLiq_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
@@ -2370,6 +2388,8 @@ slwc_ncot_int = SLWC_NCOT
                 ssa34_out(i,ihsc)   = cospIN%ss_alb(i,isc,ihml)
                 asym34_out(i,ihsc)  = cospIN%asym(i,isc,ihml)
                 fracLiq_out(i,ihsc) = cospIN%fracLiq(i,isc,ihml)
+                cal_tautot_liq(i,ihsc) = cospIN%tautot_ice_calipso(i,isc,ihml)
+                cal_tautot_ice(i,ihsc) = cospIN%tautot_liq_calipso(i,isc,ihml)
              end do
           end do
        end do
@@ -2378,6 +2398,8 @@ slwc_ncot_int = SLWC_NCOT
        call outfld('MODIS_asym',   asym34_out, pcols,lchnk)
        call outfld('MODIS_ssa',    ssa34_out,  pcols,lchnk)
        call outfld('MODIS_fracliq',fracLiq_out,pcols,lchnk)
+       call outfld('CAL_tautot_liq',cal_tautot_liq,pcols,lchnk)
+       call outfld('CAL_tautot_ice',cal_tautot_ice,pcols,lchnk)
     end if
     call t_stopf("cosp_histfile_aux")
 
@@ -2612,6 +2634,9 @@ slwc_ncot_int = SLWC_NCOT
         npdfcld(1:ncol) = cospOUT%wr_occfreq_ntotal(:,1)
         npdfdrz(1:ncol) = cospOUT%wr_occfreq_ntotal(:,2)
         npdfrain(1:ncol) = cospOUT%wr_occfreq_ntotal(:,3)
+        npdfcld_cal(1:ncol) = cospOUT%wr_occfreq_ntotal(:,4)
+        npdfdrz_cal(1:ncol) = cospOUT%wr_occfreq_ntotal(:,5)
+        npdfrain_cal(1:ncol) = cospOUT%wr_occfreq_ntotal(:,6)
         lsmallcot(1:ncol) = cospOUT%lsmallcot(:)
         mice(1:ncol) = cospOUT%mice(:)
         lsmallreff(1:ncol) = cospOUT%lsmallreff(:)
@@ -2643,12 +2668,14 @@ slwc_ncot_int = SLWC_NCOT
              end do
           end do
           ! CAM dbze94 (time,height_mlev,column,profile)
+          !print*,"dbze94(loc=106,:,:) :", dbze94(106,:,:)
           do ihml=1,nhtml_cosp
              do isc=1,nscol_cosp
                 ihsc=(ihml-1)*nscol_cosp+isc                 
                 dbze_cs(i,ihsc) = dbze94(i,isc,ihml)                 ! dbze_cs(pcols,pver*nscol_cosp) 
              end do
           end do
+          !print*,"dbze_cs(i=106,:) :", dbze_cs(106,:)
        endif
        
        if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
@@ -2934,6 +2961,9 @@ slwc_ncot_int = SLWC_NCOT
          call outfld('npdfcld', npdfcld, pcols, lchnk)
          call outfld('npdfdrz', npdfdrz, pcols, lchnk)
          call outfld('npdfrain', npdfrain, pcols, lchnk)
+         call outfld('npdfcld_cal', npdfcld_cal, pcols, lchnk)
+         call outfld('npdfdrz_cal', npdfdrz_cal, pcols, lchnk)
+         call outfld('npdfrain_cal', npdfrain_cal, pcols, lchnk)
          call outfld('lsmallcot',lsmallcot, pcols, lchnk)
          call outfld('mice', mice, pcols, lchnk)
          call outfld('lsmallreff', lsmallreff, pcols, lchnk)

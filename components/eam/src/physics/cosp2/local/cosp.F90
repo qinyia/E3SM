@@ -1689,6 +1689,8 @@ CONTAINS
                vgrid_zl(Nlvgrid:1:-1), vgrid_zu(Nlvgrid:1:-1),                &
                tautot_iceI(:,:,Nlvgrid:1:-1)                                  )
           where (frac_outI .lt. 0) frac_outI = 0._wp                          !CMB setting large negative numbers to 0
+          where (tautot_liqI .lt. 0) tautot_liqI = 0._wp                      !CMB setting large negative numbers to 0
+          where (tautot_iceI .lt. 0) tautot_iceI = 0._wp                      !CMB setting large negative numbers to 0
           call cosp_diag_warmrain(                                            &
                cloudsatIN%Npoints, cloudsatIN%Ncolumns, Nlvgrid,              & !! in
                tempI, zlev, cospgridIN%sunlit,                                & !! in
