@@ -1757,7 +1757,8 @@ slwc_ncot_int = SLWC_NCOT
     ncol  = state%ncol     ! number of columns in the chunk
     nstep = get_nstep()    ! CMB timestep counter
     print*,"nstep: ", nstep
-    
+    print*,"ncol: ", ncol
+    print*,"lchnk at COSP init: ",lchnk
     ! Initialize temporary variables as R_UNDEF - need to do this otherwise array expansion puts garbage in history
     ! file for columns over which COSP did make calculations.
     tmp(1:pcols)         = R_UNDEF
