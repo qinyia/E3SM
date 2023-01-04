@@ -1178,8 +1178,10 @@ slwc_ncot_int = SLWC_NCOT
         call addfld('mice', horiz_only, 'A', '1', '# of Ice Clouds', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lsmallreff', horiz_only, 'A', '1', '# of Liquid Clouds with Reff below lower threshold', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('lbigreff', horiz_only, 'A', '1', '# of Liquid Clouds with Reff above upper threshold', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('nmultilcld', horiz_only, 'A', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
-        call addfld('nhetcld', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nmultilcld', horiz_only, 'A', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis - MODIS/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nmultilcld_cal', horiz_only, 'A', '1', '# of Subcolumns with Multilayer Clouds excluded from SLWC analysis - CALIPSO/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nhetcld', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis -MODIS/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('nhetcld_cal', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis - CALIPSO/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('coldct', horiz_only, 'A', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('calice', horiz_only, 'A', '1', '# of Subcolumns with ice detected by CALIPSO', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal1', horiz_only, 'A', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
@@ -1196,7 +1198,9 @@ slwc_ncot_int = SLWC_NCOT
         call add_default('lsmallreff',cosp_histfile_num,' ')
         call add_default('lbigreff',cosp_histfile_num,' ')
         call add_default('nmultilcld',cosp_histfile_num, ' ')
+        call add_default('nmultilcld_cal',cosp_histfile_num, ' ')
         call add_default('nhetcld',cosp_histfile_num,' ')
+        call add_default('nhetcld_cal',cosp_histfile_num,' ')
         call add_default('coldct',cosp_histfile_num, ' ')
         call add_default('calice',cosp_histfile_num, ' ')
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
@@ -1724,6 +1728,8 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: lbigreff(pcols)
     real(r8) :: nmultilcld(pcols)
     real(r8) :: nhetcld(pcols)
+    real(r8) :: nmultilcld_cal(pcols)
+    real(r8) :: nhetcld_cal(pcols)
     real(r8) :: coldct(pcols)
     real(r8) :: calice(pcols)
     real(r8) :: obs_ntotal(pcols,NOBSTYPE)
@@ -1847,6 +1853,8 @@ slwc_ncot_int = SLWC_NCOT
     lbigreff(1:pcols)                                = R_UNDEF
     nmultilcld(1:pcols)                              = R_UNDEF
     nhetcld(1:pcols)                                 = R_UNDEF
+    nmultilcld_cal(1:pcols)                          = R_UNDEF
+    nhetcld_cal(1:pcols)                             = R_UNDEF
     coldct(1:pcols)                                  = R_UNDEF
     calice(1:pcols)                                  = R_UNDEF
     obs_ntotal(1:pcols,1:NOBSTYPE)                   = R_UNDEF
@@ -2642,8 +2650,10 @@ slwc_ncot_int = SLWC_NCOT
         mice(1:ncol) = cospOUT%mice(:)
         lsmallreff(1:ncol) = cospOUT%lsmallreff(:)
         lbigreff(1:ncol) = cospOUT%lbigreff(:)
-        nmultilcld(1:ncol) = cospOUT%nmultilcld(:)
-        nhetcld(1:ncol) = cospOUT%nhetcld(:)
+        nmultilcld(1:ncol) = cospOUT%nmultilcld(:,1)
+        nhetcld(1:ncol) = cospOUT%nhetcld(:,1)
+        nmultilcld_cal(1:ncol) = cospOUT%nmultilcld(:,2)
+        nhetcld_cal(1:ncol) = cospOUT%nhetcld(:,2)
         coldct(1:ncol) = cospOUT%coldct(:)
         calice(1:ncol) = cospOUT%calice(:)
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
@@ -2970,6 +2980,8 @@ slwc_ncot_int = SLWC_NCOT
          call outfld('lsmallreff', lsmallreff, pcols, lchnk)
          call outfld('lbigreff', lbigreff, pcols, lchnk)
          call outfld('nmultilcld', nmultilcld, pcols, lchnk)
+         call outfld('nmultilcld_cal', nmultilcld_cal, pcols, lchnk)
+         call outfld('nhetcld_cal', nhetcld_cal, pcols, lchnk)
          call outfld('nhetcld', nhetcld, pcols, lchnk)
          call outfld('coldct', coldct, pcols, lchnk)
          call outfld('calice', calice, pcols, lchnk)
@@ -3782,8 +3794,8 @@ allocate(x%lsmallcot(Npoints))
 allocate(x%mice(Npoints))
 allocate(x%lsmallreff(Npoints))
 allocate(x%lbigreff(Npoints))
-allocate(x%nmultilcld(Npoints))
-allocate(x%nhetcld(Npoints))
+allocate(x%nmultilcld(Npoints,2))
+allocate(x%nhetcld(Npoints,2))
 allocate(x%coldct(Npoints))
 allocate(x%calice(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
