@@ -98,7 +98,7 @@ EXECUTE_PROCESS (COMMAND grep ${GREP_ARGS} @F90_DIR@/@F90_TEST_NAME@_1.out
                  RESULT_VARIABLE ERROR_CODE
                  OUTPUT_VARIABLE grep_f90_stdout
                  ERROR_VARIABLE  grep_f90_stderr)
-EXECUTE_PROCESS (COMMAND grep  ${GREP_ARGS}@CXX_DIR@/@CXX_TEST_NAME@_1.out
+EXECUTE_PROCESS (COMMAND grep ${GREP_ARGS} @CXX_DIR@/@CXX_TEST_NAME@_1.out
                  RESULT_VARIABLE ERROR_CODE
                  OUTPUT_VARIABLE grep_cxx_stdout
                  ERROR_VARIABLE  grep_cxx_stderr)
