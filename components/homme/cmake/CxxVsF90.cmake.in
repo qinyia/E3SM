@@ -22,16 +22,83 @@ ENDFOREACH()
 
 MESSAGE ("CXX and F90 netcdf outputs match.\n")
 
-# Grep F90 and CXX raw output for all lines containing the string '/dt'.
-# As of today, these are all and only the lines where diagnostics are printed.
-# Then compare the output strings. If they are equal, then the two tests print
-# the same diagnostics
+#stdout part:
 
-EXECUTE_PROCESS (COMMAND grep ^diagnostics> @F90_DIR@/@F90_TEST_NAME@_1.out
+# USE THIS as an example
+#  u     =  -0.243147384741304E-03 (100)  0.147505576907181E-02 ( 23)  0.211286880334021E+02
+#  v     =  -0.125212828524944E-01 ( 23)  0.125212828525515E-01 ( 23) -0.348276962824912E-09
+#  w     =  -0.138198063986974E-03 (  1)  0.770843466145463E-04 (  1)  0.110863492459676E-01
+#  vTh_dp=   0.234596806916595E+06 (128)  0.114178713128360E+07 (  1)  0.160529214112463E+11
+#  T     =   0.299894492411938E+03 (  2)  0.300150198565646E+03 (128)  0.147426208927322E+08
+#  mu    =   0.999999989873321E+00 (  1)  0.100000000367532E+01 (  1)
+#  dz(m) =   0.688618835738591E+02 (128)  0.175567697222024E+05 (  1)  0.229752371226381E+08
+#  dp    =   0.781241756069396E+03 (  1)  0.781254664726792E+03 (  1)  0.384000085687679E+08
+#    fu  =   0.000000000000000E+00 (  1)  0.000000000000000E+00 (  1)  0.000000000000000E+00
+#    fv  =   0.000000000000000E+00 (  1)  0.000000000000000E+00 (  1)  0.000000000000000E+00
+#    ft  =  -0.289351851851853E-04 ( 28)  0.419995717719951E-04 (128) -0.827793773510029E+00
+#    fq1 =   0.000000000000000E+00 (  1)  0.288693356806040E-06 (128)  0.739054993423462E-04
+#      min dz/w (CFL condition) =   0.180954140544290E+08 (105)
+# qv(  1)=   0.0000000000000000E+00  0.1330253531729735E-05  0.8706786517267520E-02
+#    TBOT=   0.299947654042697E+03  0.300150198565646E+03
+#      ps=   0.999989447768829E+05  0.100000597085029E+06  0.384000085687681E+08
+#      M =   0.101976717382609E+05 kg/m^2  0.100000000692864E+06mb     
+#    dry M =   0.101976716676049E+05 kg/m^2
+#**DYNAMICS**        J/m^2                    W/m^2                W/m^2    
+#KE,d/dt        0.18404066198806E+00  0.51122406107795E-04
+#IE,d/dt        0.21960150201725E+10 -0.61261807782385E+02
+#PE,d/dt        0.87796555801302E+09 -0.24493033088644E+02
+# E,dE/dt       0.30739805783695E+10 -0.85754789748722E+02
+#Q  1,Q diss, dQ^2/dt:  0.70656001567841E-04 kg/m^2  0.3388132E-22 -0.1262850E-17
+#Change from dribbled phys tendencies, viscosity, remap:
+#dKE/dt(W/m^2):   0.0000000E+00 -0.1651402E-08 -0.3012328E-15
+#dIE/dt(W/m^2):  -0.6126179E+02  0.2384186E-08  0.1603809E-03
+#dPE/dt(W/m^2):  -0.2449159E+02  0.9934107E-09  0.6412013E-04
+#dQ1/dt(kg/sm^2)  0.1962667E-07
+#(E-E0)/E0  -0.200682327210398E-03
+#(Q-Q0)/Q0   0.100000000000000E+01   Q1
+#IMEX max iterations, error:  2  0.838604619251314E-06  0.112543901609405E-11
+
+#add some dcmip output
+# time=   85200.0000000000       pmax_w (m/s)=  5.262079618911653E-003
+# time=   85200.0000000000       pmax_precl (mm/day)=  0.528769135742253     
+# time=   85200.0000000000       pmin_ps (Pa)=   101287.558602703   
+
+SET(GREP_ARGS "  u     =")
+foreach (s
+  "  v     ="
+  "  w     ="
+  "  T     ="
+  "  mu    ="
+  "  vTh_dp="
+  "  dz(m) ="
+  "  dp    ="
+  "    fu  ="
+  "    fv  ="
+  "    ft  ="
+  "    fq1 ="
+  "min dz/w"
+  " qv(  1)="
+  "    TBOT="
+  "      ps="
+  "      M ="
+  "  dry M ="
+  "/dt"
+  "Q  1,Q"
+  "(E-E0)"
+  "(Q-Q0)"
+  "pmax_"
+  )
+ set(GREP_ARGS "${GREP_ARGS}\\|${s}")
+endforeach()
+
+message("grep_args are ${GREP_ARGS}")
+
+
+EXECUTE_PROCESS (COMMAND grep ${GREP_ARGS} @F90_DIR@/@F90_TEST_NAME@_1.out
                  RESULT_VARIABLE ERROR_CODE
                  OUTPUT_VARIABLE grep_f90_stdout
                  ERROR_VARIABLE  grep_f90_stderr)
-EXECUTE_PROCESS (COMMAND grep ^diagnostics> @CXX_DIR@/@CXX_TEST_NAME@_1.out
+EXECUTE_PROCESS (COMMAND grep  ${GREP_ARGS}@CXX_DIR@/@CXX_TEST_NAME@_1.out
                  RESULT_VARIABLE ERROR_CODE
                  OUTPUT_VARIABLE grep_cxx_stdout
                  ERROR_VARIABLE  grep_cxx_stderr)
