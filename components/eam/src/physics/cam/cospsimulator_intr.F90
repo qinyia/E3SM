@@ -1183,6 +1183,7 @@ slwc_ncot_int = SLWC_NCOT
         call addfld('nhetcld', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis -MODIS/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('nhetcld_cal', horiz_only, 'A', '1', '# of Subcolumns with Heterogeneous Clouds excluded from SLWC analysis - CALIPSO/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('coldct', horiz_only, 'A', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis', flag_xyfill=.true., fill_value=R_UNDEF)
+        call addfld('coldct_cal', horiz_only, 'A', '1', '# of Subcolumns with Cloud Top Temp < 273 K excluded from SLWC analysis, detected by CALIPSO/CloudSat', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('calice', horiz_only, 'A', '1', '# of Subcolumns with ice detected by CALIPSO', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal1', horiz_only, 'A', '1', '# of total observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
         call addfld('obs_ntotal2', horiz_only, 'A', '1', '# of clear-sky observations from warmrain diags', flag_xyfill=.true., fill_value=R_UNDEF)
@@ -1202,6 +1203,7 @@ slwc_ncot_int = SLWC_NCOT
         call add_default('nhetcld',cosp_histfile_num,' ')
         call add_default('nhetcld_cal',cosp_histfile_num,' ')
         call add_default('coldct',cosp_histfile_num, ' ')
+        call add_default('coldct_cal',cosp_histfile_num, ' ')
         call add_default('calice',cosp_histfile_num, ' ')
         call add_default('obs_ntotal1',cosp_histfile_num, ' ')
         call add_default('obs_ntotal2',cosp_histfile_num, ' ')
@@ -1731,6 +1733,7 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: nmultilcld_cal(pcols)
     real(r8) :: nhetcld_cal(pcols)
     real(r8) :: coldct(pcols)
+    real(r8) :: coldct_cal(pcols)
     real(r8) :: calice(pcols)
     real(r8) :: obs_ntotal(pcols,NOBSTYPE)
     real(r8) :: obs_ntotal1(pcols)
@@ -1856,6 +1859,7 @@ slwc_ncot_int = SLWC_NCOT
     nmultilcld_cal(1:pcols)                          = R_UNDEF
     nhetcld_cal(1:pcols)                             = R_UNDEF
     coldct(1:pcols)                                  = R_UNDEF
+    coldct_cal(1:pcols)                              = R_UNDEF
     calice(1:pcols)                                  = R_UNDEF
     obs_ntotal(1:pcols,1:NOBSTYPE)                   = R_UNDEF
     obs_ntotal1(1:pcols)                             = R_UNDEF
@@ -2322,7 +2326,7 @@ slwc_ncot_int = SLWC_NCOT
     cospstateIN%hgt_matrix_half(1:ncol,pver+1) = 0._r8
     cospstateIN%hgt_matrix_half(1:ncol,1:pver) = zbot(1:ncol,pver:1:-1) 
     cospstateIN%surfelev(1:ncol)               = zbot(1:ncol,1)
-    cospstateIN%lchnk(1)                       = lchnk
+    cospstateIN%lchnk                          = lchnk
     call t_stopf("construct_cospstateIN")
 
     ! Optical inputs
@@ -2656,6 +2660,7 @@ slwc_ncot_int = SLWC_NCOT
         nmultilcld_cal(1:ncol) = cospOUT%nmultilcld(:,2)
         nhetcld_cal(1:ncol) = cospOUT%nhetcld(:,2)
         coldct(1:ncol) = cospOUT%coldct(:)
+        coldct_cal(1:ncol) = cospOUT%coldct_cal(:)
         calice(1:ncol) = cospOUT%calice(:)
         obs_ntotal1(1:ncol) = cospOUT%obs_ntotal(:,1)
         obs_ntotal2(1:ncol) = cospOUT%obs_ntotal(:,2)
@@ -2985,6 +2990,7 @@ slwc_ncot_int = SLWC_NCOT
          call outfld('nhetcld_cal', nhetcld_cal, pcols, lchnk)
          call outfld('nhetcld', nhetcld, pcols, lchnk)
          call outfld('coldct', coldct, pcols, lchnk)
+         call outfld('coldct_cal', coldct_cal, pcols, lchnk)
          call outfld('calice', calice, pcols, lchnk)
          call outfld('obs_ntotal1', obs_ntotal1, pcols, lchnk)
          call outfld('obs_ntotal2', obs_ntotal2, pcols, lchnk)
@@ -3678,7 +3684,7 @@ slwc_ncot_int = SLWC_NCOT
              y%v_sfc(npoints),y%lat(npoints),y%lon(nPoints),y%emis_sfc(nchan),           &
              y%cloudIce(nPoints,nLevels),y%cloudLiq(nPoints,nLevels),y%surfelev(nPoints),&
              y%fl_snow(nPoints,nLevels),y%fl_rain(nPoints,nLevels),y%seaice(npoints),    &
-             y%tca(nPoints,nLevels),y%hgt_matrix_half(npoints,nlevels+1),y%lchnk(1))
+             y%tca(nPoints,nLevels),y%hgt_matrix_half(npoints,nlevels+1))
 
   end subroutine construct_cospstateIN
   ! ######################################################################################
@@ -3798,6 +3804,7 @@ allocate(x%lbigreff(Npoints))
 allocate(x%nmultilcld(Npoints,2))
 allocate(x%nhetcld(Npoints,2))
 allocate(x%coldct(Npoints))
+allocate(x%coldct_cal(Npoints))
 allocate(x%calice(Npoints))
 allocate(x%obs_ntotal(Npoints,NOBSTYPE))
 allocate(x%slwccot(Npoints,SLWC_NCOT,CFODD_NCLASS))
@@ -4147,6 +4154,10 @@ allocate(x%slwccot(Npoints,SLWC_NCOT,CFODD_NCLASS))
      if (associated(y%coldct)) then
         deallocate(y%coldct)
         nullify(y%coldct)
+     endif
+     if (associated(y%coldct_cal)) then
+        deallocate(y%coldct_cal)
+        nullify(y%coldct_cal)
      endif
      if (associated(y%calice)) then
         deallocate(y%calice)

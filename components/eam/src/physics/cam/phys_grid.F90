@@ -415,7 +415,7 @@ contains
     integer :: glbcnt, curcnt             ! running grid point counts
     integer :: curp                       ! current process id
     integer :: block_cnt                  ! number of blocks containing data
-    integer, dimension(:), allocatable :: pcolidx   ! CMB finding lchunk index for a specific pcol
+!    integer, dimension(:), allocatable :: pcolidx   ! CMB finding lchunk index for a specific pcol
 
     ! for a given vertical column
     integer :: numlvl                     ! number of vertical levels in block 
@@ -1337,7 +1337,7 @@ contains
       max_process_ncols    = maxval(process_ncols)
       min_pcols            = minval(pcols_proc)
 
-      allocate(pcolidx(begchunk:endchunk))
+!      allocate(pcolidx(begchunk:endchunk))
       lcid = begchunk
       write(iulog,*) 'shape minloc: ', size(MINLOC(lchunks(lcid)%gcol(:), &
        MASK=(lchunks(lcid)%gcol(:) == 230)))
@@ -1345,16 +1345,16 @@ contains
       write(iulog,*) 'endchunk: ', endchunk
       !CMB Finding location of gcol 230 in lchunk array
 !      do lcid = begchunk, endchunk
-          ! Find the position of the first element in lchunks(i)%gcol that is equal to 230
+!          ! Find the position of the first element in lchunks(i)%gcol that is equal to 230
 !          pcolidx(lcid) = MINLOC(lchunks(lcid)%gcol(:), MASK=(lchunks(lcid)%gcol(:) == 230))
-          ! If an element was found, print the indices (i, result)
+!          ! If an element was found, print the indices (i, result)
 !          if (pcolidx(lcid) > 0) then
-!              write(iulog,*) "PCOL 230 found at lchnk indices (", lcid, ", ", pcolidx(lcid), ")"
+!              write(iulog,*) "PCOL 230 found at lchnk indices (", lcid, ", ", pcolidx(lcid), ")
 !          endif
 !      end do
       
       deallocate(process_ncols)
-      deallocate(pcolidx)
+!      deallocate(pcolidx)
      !CMB
       write(iulog,*) 'checking pcol at lcid index 8697: ', get_gcol_p(8697,1)
 
