@@ -634,7 +634,6 @@ CONTAINS
        Lcloudsat_column    = .true.
        Lcloudsat_subcolumn = .true.
        Lcloudsat_modis_wr  = .true. ! WR: warm rain product
-       !print*, "Lcloudsat_modis_wr is TRUE"
     endif
     
     !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1629,7 +1628,6 @@ CONTAINS
 
     ! CloudSat/MODIS joint products (CFODDs and Occurrence Frequency of Warm Clouds)
     if (Lcloudsat_modis_wr) then
-       !print*,"running warm rain diagnostics from cosp_simulator"
        allocate( cfodd_ntotal(cloudsatIN%Npoints, CFODD_NDBZE, CFODD_NICOD, CFODD_NCLASS) )
        allocate( wr_occfreq_ntotal(cloudsatIN%Npoints, WR_NREGIME) )
        allocate( lsmallcot(cloudsatIN%Npoints) )

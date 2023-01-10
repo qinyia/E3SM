@@ -814,10 +814,6 @@ contains
                 ! yes - then save the information
                 ncols = ncols + 1
                 chunks(cid)%gcol(ncols) = curgcol_d
-                ! CMB finding chunk index for location of interest to WRD debugging
-                if (curgcol_d .eq. 229) then     
-                   write(iulog,*) 'for gcol 229, lchunk id = ', cid, '  gcol = ', ncols
-                endif
                 chunks(cid)%estcost = chunks(cid)%estcost + cost_d(curgcol_d)
              endif
           enddo
@@ -1220,8 +1216,6 @@ contains
     do lcid = begchunk, endchunk
       ncols = lchunks(lcid)%ncols
       call get_gcol_all_p(lcid, pcols, gcols)
-      write(iulog,*) 'gcols get_gcol_all_p for local chnk id: ',gcols
-      write(iulog,*) 'local chunk id: ', lcid
       ! collect latvals and lonvals
       cid = lchunks(lcid)%cid
       do i = 1, chunks(cid)%ncols
@@ -1339,10 +1333,7 @@ contains
 
 !      allocate(pcolidx(begchunk:endchunk))
       lcid = begchunk
-      write(iulog,*) 'shape minloc: ', size(MINLOC(lchunks(lcid)%gcol(:), &
-       MASK=(lchunks(lcid)%gcol(:) == 230)))
-      write(iulog,*) 'begchunk: ', begchunk
-      write(iulog,*) 'endchunk: ', endchunk
+
       !CMB Finding location of gcol 230 in lchunk array
 !      do lcid = begchunk, endchunk
 !          ! Find the position of the first element in lchunks(i)%gcol that is equal to 230
@@ -1355,8 +1346,7 @@ contains
       
       deallocate(process_ncols)
 !      deallocate(pcolidx)
-     !CMB
-      write(iulog,*) 'checking pcol at lcid index 8697: ', get_gcol_p(8697,1)
+
 
       write(iulog,*) 'PHYS_GRID_INIT:  Using'
 #ifdef PPCOLS

@@ -1765,9 +1765,6 @@ slwc_ncot_int = SLWC_NCOT
     lchnk = state%lchnk    ! state variable contains a number of columns, one chunk
     ncol  = state%ncol     ! number of columns in the chunk
     nstep = get_nstep()    ! CMB timestep counter
-    print*,"nstep: ", nstep
-    print*,"ncol: ", ncol
-    print*,"lchnk at COSP init: ",lchnk
     ! Initialize temporary variables as R_UNDEF - need to do this otherwise array expansion puts garbage in history
     ! file for columns over which COSP did make calculations.
     tmp(1:pcols)         = R_UNDEF
@@ -2685,14 +2682,13 @@ slwc_ncot_int = SLWC_NCOT
              end do
           end do
           ! CAM dbze94 (time,height_mlev,column,profile)
-          !print*,"dbze94(loc=106,:,:) :", dbze94(106,:,:)
+         
           do ihml=1,nhtml_cosp
              do isc=1,nscol_cosp
                 ihsc=(ihml-1)*nscol_cosp+isc                 
                 dbze_cs(i,ihsc) = dbze94(i,isc,ihml)                 ! dbze_cs(pcols,pver*nscol_cosp) 
              end do
           end do
-          !print*,"dbze_cs(i=106,:) :", dbze_cs(106,:)
        endif
        
        if ((lradar_sim) .and. (lmodis_sim) .and. (llidar_sim)) then
