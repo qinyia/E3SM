@@ -89,7 +89,7 @@ foreach (s
   "      ps="
   "      M ="
   "  dry M ="
-  "dKE/dt"
+#  "dKE/dt"
 #  "dIE/dt"
 #  "dPE/dt"
   "dQ1/dt"
