@@ -177,6 +177,8 @@ void Diagnostics::prim_energy_halftimes (const bool before_advance, const int iv
   Kokkos::parallel_for(m_policy, *this);
 
   Kokkos::deep_copy(h_KEner, m_KEner);
+  Kokkos::deep_copy(h_IEner, m_IEner);
+  Kokkos::deep_copy(h_PEner, m_PEner);
 }
 
 } // namespace Homme
