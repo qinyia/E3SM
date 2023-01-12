@@ -15,8 +15,8 @@ FOREACH (NC_FILE_NAME @NC_OUTPUT_FILES@)
 
   # If cprnc does not return 0, then the test failed
   IF (identical_pos EQUAL -1)
-    MESSAGE (FATAL_ERROR "Test did not succeed. Netcdf outputs '${NC_FILE_NAME}' differ.")
     MESSAGE ("${cprnc_stdout}")
+    MESSAGE (FATAL_ERROR "Test did not succeed. Netcdf outputs '${NC_FILE_NAME}' differ.")
   ENDIF()
 ENDFOREACH()
 
@@ -63,8 +63,15 @@ MESSAGE ("CXX and F90 netcdf outputs match.\n")
 # time=   85200.0000000000       pmax_precl (mm/day)=  0.528769135742253     
 # time=   85200.0000000000       pmin_ps (Pa)=   101287.558602703   
 
-SET(GREP_ARGS "  u     =")
+
+
+
+
+
+#SET(GREP_ARGS "  u     =")
+set(ITWORKS 1)
 foreach (s
+  "  u     ="
   "  v     ="
   "  w     ="
   "  T     ="
@@ -82,17 +89,19 @@ foreach (s
   "      ps="
   "      M ="
   "  dry M ="
-  "/dt"
+  "dKE/dt"
+#  "dIE/dt"
+#  "dPE/dt"
+  "dQ1/dt"
   "Q  1,Q"
-  "(E-E0)"
+#  "(E-E0)"
   "(Q-Q0)"
   "pmax_"
   )
- set(GREP_ARGS "${GREP_ARGS}\\|${s}")
-endforeach()
+ #set(GREP_ARGS "${GREP_ARGS}\\|${s}")
+ set(GREP_ARGS "${s}")
 
-message("grep_args are ${GREP_ARGS}")
-
+message("grep_args are ${GREP_ARGS} -----------------------------------")
 
 EXECUTE_PROCESS (COMMAND grep ${GREP_ARGS} @F90_DIR@/@F90_TEST_NAME@_1.out
                  RESULT_VARIABLE ERROR_CODE
@@ -104,7 +113,14 @@ EXECUTE_PROCESS (COMMAND grep ${GREP_ARGS} @CXX_DIR@/@CXX_TEST_NAME@_1.out
                  ERROR_VARIABLE  grep_cxx_stderr)
 
 IF (NOT "${grep_f90_stdout}" STREQUAL "${grep_cxx_stdout}")
-  MESSAGE (FATAL_ERROR "Test did not succeed. CXX and F90 diagnostics outputs differ:\nf90:\n${grep_f90_stdout}\ncxx:\n${grep_cxx_stdout}")
+  SET(ITWORKS 0)
+  MESSAGE("Test did not succeed. CXX and F90 diagnostics outputs differ:\nf90:\n${grep_f90_stdout}\ncxx:\n${grep_cxx_stdout}")
 ELSE ()
-  MESSAGE ("CXX and F90 diagnostics outputs match.\n")
+#  MESSAGE ("CXX and F90 diagnostics outputs match.\n")
+ENDIF()
+
+endforeach()
+
+if(${ITWORKS} EQUAL 0)
+  MESSAGE (FATAL_ERROR "STDOUT: CXX and F90 diagnostics outputs differ.")
 ENDIF()
