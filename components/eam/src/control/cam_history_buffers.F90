@@ -18,7 +18,10 @@ contains
     !-----------------------------------------------------------------------
     !
     real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
-    integer, pointer                 :: nacs(:) ! accumulation counter
+    ! YQIN
+!    integer, pointer                 :: nacs(:) ! accumulation counter
+    integer, pointer                 :: nacs(:,:) ! accumulation counter
+
     integer, intent(in)              :: idim    ! Longitude dimension of field array
     logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
@@ -42,21 +45,22 @@ contains
     end do
 
     if (flag_xyfill) then
+    do k=1,jeu
        do i=1,ieu
-          if (field(i,1) == fillvalue) then
-             nacs(i) = 0
+          if (field(i,k) == fillvalue) then
+             nacs(i,k) = 0
           else
-             nacs(i) = 1
+             nacs(i,k) = 1
           end if
        end do
+    end do
     else
-       nacs(1) = 1
+       nacs(:,:) = 1
     end if
 
     return
   end subroutine hbuf_accum_inst
   !#######################################################################
-
   subroutine hbuf_accum_add (buf8, field, nacs, dimind, idim, flag_xyfill, fillvalue)
     !
     !-----------------------------------------------------------------------
@@ -67,7 +71,9 @@ contains
     !-----------------------------------------------------------------------
     !
     real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
-    integer, pointer                 :: nacs(:) ! accumulation counter
+!    integer, pointer                 :: nacs(:) ! accumulation counter
+    integer, pointer                 :: nacs(:,:) ! accumulation counter
+
     integer, intent(in) :: idim           ! Longitude dimension of field array
     logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
@@ -81,6 +87,8 @@ contains
 
     call dimind%dim_sizes(ieu, jeu)
 
+    !write(*,*) "YQIN ieu=", ieu, "jeu=", jeu, "idim=", idim
+
     if (flag_xyfill) then
        do k=1,jeu
           do i=1,ieu
@@ -92,23 +100,81 @@ contains
        !
        ! Ensure input field has fillvalue defined invariant in the z-direction, then increment nacs
        !
-       call check_accum (field, idim, ieu, jeu, fillvalue)
+       !call check_accum (field, idim, ieu, jeu, fillvalue)
+       do k=1,jeu
        do i=1,ieu
-          if (field(i,1) /= fillvalue) then
-             nacs(i) = nacs(i) + 1
+          if (field(i,k) /= fillvalue) then
+             nacs(i,k) = nacs(i,k) + 1
           end if
-       end do
+       end do ! i
+       end do ! k
+       !write(*,*) "YQIN nacs=",nacs
     else
        do k=1,jeu
           do i=1,ieu
              buf8(i,k) = buf8(i,k) + field(i,k)
+             nacs(i,k) = nacs(i,k) + 1
           end do
        end do
-       nacs(1) = nacs(1) + 1
+       !nacs(1) = nacs(1) + 1
     end if
 
     return
   end subroutine hbuf_accum_add
+
+
+!!!  subroutine hbuf_accum_add (buf8, field, nacs, dimind, idim, flag_xyfill, fillvalue)
+!!!    !
+!!!    !-----------------------------------------------------------------------
+!!!    !
+!!!    ! Purpose: Add the values of field to 2-D hbuf.
+!!!    !          Increment accumulation counter by 1.
+!!!    !
+!!!    !-----------------------------------------------------------------------
+!!!    !
+!!!    real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
+!!!    integer, pointer                 :: nacs(:) ! accumulation counter
+!!!    integer, intent(in) :: idim           ! Longitude dimension of field array
+!!!    logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
+!!!    real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
+!!!    type (dim_index_2d), intent(in ) :: dimind  ! 2-D dimension index
+!!!    real(r8), intent(in) :: fillvalue
+!!!    !
+!!!    ! Local indices
+!!!    !
+!!!    integer :: ieu, jeu  ! number of elements in each dimension
+!!!    integer :: i,k       ! indices
+!!!
+!!!    call dimind%dim_sizes(ieu, jeu)
+!!!
+!!!    if (flag_xyfill) then
+!!!       do k=1,jeu
+!!!          do i=1,ieu
+!!!             if (field(i,k) /= fillvalue) then
+!!!                buf8(i,k) = buf8(i,k) + field(i,k)
+!!!             end if
+!!!          end do
+!!!       end do
+!!!       !
+!!!       ! Ensure input field has fillvalue defined invariant in the z-direction, then increment nacs
+!!!       !
+!!!       call check_accum (field, idim, ieu, jeu, fillvalue)
+!!!       do i=1,ieu
+!!!          if (field(i,1) /= fillvalue) then
+!!!             nacs(i) = nacs(i) + 1
+!!!          end if
+!!!       end do
+!!!    else
+!!!       do k=1,jeu
+!!!          do i=1,ieu
+!!!             buf8(i,k) = buf8(i,k) + field(i,k)
+!!!          end do
+!!!       end do
+!!!       nacs(1) = nacs(1) + 1
+!!!    end if
+!!!
+!!!    return
+!!!  end subroutine hbuf_accum_add
 
   !#######################################################################
 
@@ -124,7 +190,7 @@ contains
     use time_manager, only:  get_curr_date
 
     real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
-    integer, pointer                 :: nacs(:) ! accumulation counter
+    integer, pointer                 :: nacs(:,:) ! accumulation counter
     integer, intent(in) :: idim           ! Longitude dimension of field array
     logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
@@ -154,19 +220,21 @@ contains
        !
        ! Ensure input field has fillvalue defined invariant in the z-direction, then increment nacs
        !
-       call check_accum (field, idim, ieu, jeu, fillvalue)
+       !call check_accum (field, idim, ieu, jeu, fillvalue)
+       do k=1,ieu
        do i=1,ieu
-          if (field(i,1) /= fillvalue) then
-             nacs(i) = nacs(i) + 1
+          if (field(i,k) /= fillvalue) then
+             nacs(i,k) = nacs(i,k) + 1
           end if
+       end do
        end do
     else
        do k=1,jeu
           do i=1,ieu
              buf8(i,k) = buf8(i,k) + field(i,k)
+             nacs(i,k) = nacs(i,k) + 1
           end do
        end do
-       nacs(1) = nacs(1) + 1
     end if
 
     return
@@ -184,7 +252,7 @@ contains
     !-----------------------------------------------------------------------
     !
     real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
-    integer, pointer                 :: nacs(:) ! accumulation counter
+    integer, pointer                 :: nacs(:,:) ! accumulation counter
     integer, intent(in) :: idim           ! Longitude dimension of field array
     logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
@@ -201,7 +269,7 @@ contains
     if (flag_xyfill) then
        do k=1,jeu
           do i=1,ieu
-             if (nacs(i) == 0) then
+             if (nacs(i,k) == 0) then
                 buf8(i,k) = -huge (buf8)
              end if
              if (field(i,k) > buf8(i,k) .and. field(i,k) /= fillvalue) then
@@ -212,7 +280,7 @@ contains
     else
        do k=1,jeu
           do i=1,ieu
-             if (nacs(1) == 0) then
+             if (nacs(i,k) == 0) then
                 buf8(i,k) = -huge (buf8)
              end if
              if (field(i,k) > buf8(i,k)) then
@@ -223,14 +291,16 @@ contains
     end if
 
     if (flag_xyfill) then
-       call check_accum (field, idim, ieu, jeu,fillvalue)
+       !call check_accum (field, idim, ieu, jeu,fillvalue)
+       do k=1,jeu
        do i=1,ieu
-          if (field(i,1) /= fillvalue) then
-             nacs(i) = 1
+          if (field(i,k) /= fillvalue) then
+             nacs(i,k) = 1
           end if
        end do
+       end do
     else
-       nacs(1) = 1
+       nacs(:,:) = 1
     end if
 
     return
@@ -248,7 +318,7 @@ contains
     !-----------------------------------------------------------------------
     !
     real(r8), pointer :: buf8(:,:)    ! 2-D history buffer
-    integer, pointer                 :: nacs(:) ! accumulation counter
+    integer, pointer                 :: nacs(:,:) ! accumulation counter
     integer, intent(in) :: idim           ! Longitude dimension of field array
     logical, intent(in)              :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8),          intent(in ) :: field(idim,*)   ! real*8 array
@@ -265,7 +335,7 @@ contains
     if (flag_xyfill) then
        do k=1,jeu
           do i=1,ieu
-             if (nacs(i) == 0) then
+             if (nacs(i,k) == 0) then
                 buf8(i,k) = +huge (buf8)
              end if
              if (field(i,k) < buf8(i,k) .and. field(i,k) /= fillvalue) then
@@ -276,7 +346,7 @@ contains
     else
        do k=1,jeu
           do i=1,ieu
-             if (nacs(1) == 0) then
+             if (nacs(i,k) == 0) then
                 buf8(i,k) = +huge (buf8)
              end if
              if (field(i,k) < buf8(i,k)) then
@@ -287,14 +357,16 @@ contains
     end if
 
     if (flag_xyfill) then
-       call check_accum (field, idim, ieu, jeu, fillvalue)
+       !call check_accum (field, idim, ieu, jeu, fillvalue)
+       do k=1,jeu
        do i=1,ieu
-          if (field(i,1) /= fillvalue) then
-             nacs(i) = 1
+          if (field(i,k) /= fillvalue) then
+             nacs(i,k) = 1
           end if
        end do
+       end do
     else
-       nacs(1) = 1
+       nacs(:,:) = 1
     end if
 
     return
@@ -319,7 +391,7 @@ contains
 
     type (dim_index_2d), intent(in ) :: dimind  ! 2-D dimension index
     real(r8), pointer    :: buf8(:,:)    ! 2-D history buffer
-    integer,  pointer    :: nacs(:) ! accumulation counter
+    integer,  pointer    :: nacs(:,:) ! accumulation counter
     integer,  intent(in) :: idim           ! Longitude dimension of field array
     logical,  intent(in) :: flag_xyfill ! non-applicable xy points flagged with fillvalue
     real(r8), intent(in) :: field(idim,*)   ! real*8 array
@@ -397,11 +469,13 @@ contains
        !
        ! Ensure input field has fillvalue defined invariant in the z-direction, then increment nacs
        !
-       call check_accum (field, idim, ieu, jeu, fillvalue)
+!       call check_accum (field, idim, ieu, jeu, fillvalue)
+       do k=1,jeu
        do i=1,ieu
-          if (inavg(i) .and. (field(i,1) /= fillvalue)) then
-             nacs(i) = nacs(i) + 1
+          if (inavg(i) .and. (field(i,k) /= fillvalue)) then
+             nacs(i,k) = nacs(i,k) + 1
           end if
+       end do
        end do
     else
        do k=1,jeu
@@ -416,8 +490,10 @@ contains
        ! average, so nacs need to be dimension with the number of columns unlike the other 
        ! averaging techniques.
        !
+       do k=1,jeu
        do i=1,ieu
-          if (inavg(i)) nacs(i) = nacs(i) + 1
+          if (inavg(i)) nacs(i,k) = nacs(i,k) + 1
+       end do
        end do
     end if
 

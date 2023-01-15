@@ -442,11 +442,16 @@ CONTAINS
         allocate(tape(t)%hlist(f)%hbuf(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         tape(t)%hlist(f)%hbuf = 0._r8
         if(tape(t)%hlist(f)%field%flag_xyfill .or. (avgflag_pertape(t) .eq. 'L')) then
-          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          ! YQIN 
+          !allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         else
-          allocate (tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          ! YQIN
+          !allocate (tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         end if
-        tape(t)%hlist(f)%nacs(:,:) = 0
+        !tape(t)%hlist(f)%nacs(:,:) = 0
+        tape(t)%hlist(f)%nacs(:,:,:) = 0
         tape(t)%hlist(f)%field%meridional_complement = -1
         tape(t)%hlist(f)%field%zonal_complement = -1
       end do
@@ -486,11 +491,6 @@ CONTAINS
     character(len=fieldname_lenp2) :: fincl8(pflds)
     character(len=fieldname_lenp2) :: fincl9(pflds)
     character(len=fieldname_lenp2) :: fincl10(pflds)
-    character(len=fieldname_lenp2) :: fincl11(pflds)
-    character(len=fieldname_lenp2) :: fincl12(pflds)
-    character(len=fieldname_lenp2) :: fincl13(pflds)
-    character(len=fieldname_lenp2) :: fincl14(pflds)
-    character(len=fieldname_lenp2) :: fincl15(pflds)
 
     character(len=max_chars)       :: fincl1lonlat(pflds)
     character(len=max_chars)       :: fincl2lonlat(pflds)
@@ -502,11 +502,6 @@ CONTAINS
     character(len=max_chars)       :: fincl8lonlat(pflds)
     character(len=max_chars)       :: fincl9lonlat(pflds)
     character(len=max_chars)       :: fincl10lonlat(pflds)
-    character(len=max_chars)       :: fincl11lonlat(pflds)
-    character(len=max_chars)       :: fincl12lonlat(pflds)
-    character(len=max_chars)       :: fincl13lonlat(pflds)
-    character(len=max_chars)       :: fincl14lonlat(pflds)
-    character(len=max_chars)       :: fincl15lonlat(pflds)
 
     character(len=fieldname_len)   :: fexcl1(pflds)
     character(len=fieldname_len)   :: fexcl2(pflds)
@@ -518,11 +513,6 @@ CONTAINS
     character(len=fieldname_len)   :: fexcl8(pflds)
     character(len=fieldname_len)   :: fexcl9(pflds)
     character(len=fieldname_len)   :: fexcl10(pflds)
-    character(len=fieldname_len)   :: fexcl11(pflds)
-    character(len=fieldname_len)   :: fexcl12(pflds)
-    character(len=fieldname_len)   :: fexcl13(pflds)
-    character(len=fieldname_len)   :: fexcl14(pflds)
-    character(len=fieldname_len)   :: fexcl15(pflds)
 
     character(len=fieldname_lenp2) :: fwrtpr1(pflds)
     character(len=fieldname_lenp2) :: fwrtpr2(pflds)
@@ -534,11 +524,6 @@ CONTAINS
     character(len=fieldname_lenp2) :: fwrtpr8(pflds)
     character(len=fieldname_lenp2) :: fwrtpr9(pflds)
     character(len=fieldname_lenp2) :: fwrtpr10(pflds)
-    character(len=fieldname_lenp2) :: fwrtpr11(pflds)
-    character(len=fieldname_lenp2) :: fwrtpr12(pflds)
-    character(len=fieldname_lenp2) :: fwrtpr13(pflds)
-    character(len=fieldname_lenp2) :: fwrtpr14(pflds)
-    character(len=fieldname_lenp2) :: fwrtpr15(pflds)
 
     integer                        :: interpolate_nlat(size(interpolate_info))
     integer                        :: interpolate_nlon(size(interpolate_info))
@@ -549,18 +534,14 @@ CONTAINS
     namelist /cam_history_nl/ ndens, nhtfrq, mfilt, inithist, inithist_nsteps, &
          inithist_all, avgflag_pertape, empty_htapes, lcltod_start, lcltod_stop, &
          fincl1lonlat, fincl2lonlat, fincl3lonlat, fincl4lonlat, fincl5lonlat, &
-         fincl6lonlat, fincl7lonlat, fincl8lonlat, fincl9lonlat, fincl10lonlat,&
-         fincl11lonlat,fincl12lonlat,fincl13lonlat,fincl14lonlat,fincl15lonlat,&
-         collect_column_output, hfilename_spec,                                &
+         fincl6lonlat, fincl7lonlat, fincl8lonlat, fincl9lonlat,               &
+         fincl10lonlat, collect_column_output, hfilename_spec,                 &
          fincl1,  fincl2,  fincl3,  fincl4,  fincl5,                           &
          fincl6,  fincl7,  fincl8,  fincl9,  fincl10,                          &
-         fincl11, fincl12, fincl13, fincl14, fincl15,                          &
          fexcl1,  fexcl2,  fexcl3,  fexcl4,  fexcl5,                           &
          fexcl6,  fexcl7,  fexcl8,  fexcl9,  fexcl10,                          &
-         fexcl11, fexcl12, fexcl13, fexcl14, fexcl15,                          &
          fwrtpr1, fwrtpr2, fwrtpr3, fwrtpr4, fwrtpr5,                          &
          fwrtpr6, fwrtpr7, fwrtpr8, fwrtpr9, fwrtpr10,                         &
-         fwrtpr11,fwrtpr12,fwrtpr13,fwrtpr14,fwrtpr15,                         &
          interpolate_nlat, interpolate_nlon,                                   &
          interpolate_gridtype, interpolate_type, interpolate_output
 
@@ -600,11 +581,6 @@ CONTAINS
       fincl8(f)        = ' '         
       fincl9(f)        = ' '         
       fincl10(f)       = ' '         
-      fincl11(f)       = ' '         
-      fincl12(f)       = ' '         
-      fincl13(f)       = ' '         
-      fincl14(f)       = ' '         
-      fincl15(f)       = ' '         
       fincl1lonlat(f)  = ' '
       fincl2lonlat(f)  = ' '
       fincl3lonlat(f)  = ' '
@@ -615,11 +591,6 @@ CONTAINS
       fincl8lonlat(f)  = ' '
       fincl9lonlat(f)  = ' '
       fincl10lonlat(f) = ' '
-      fincl11lonlat(f) = ' '
-      fincl12lonlat(f) = ' '
-      fincl13lonlat(f) = ' '
-      fincl14lonlat(f) = ' '
-      fincl15lonlat(f) = ' '
       fexcl1(f)        = ' '
       fexcl2(f)        = ' '
       fexcl3(f)        = ' '
@@ -630,11 +601,6 @@ CONTAINS
       fexcl8(f)        = ' '
       fexcl9(f)        = ' '
       fexcl10(f)       = ' '
-      fexcl11(f)       = ' '
-      fexcl12(f)       = ' '
-      fexcl13(f)       = ' '
-      fexcl14(f)       = ' '
-      fexcl15(f)       = ' '
       fwrtpr1(f)       = ' '
       fwrtpr2(f)       = ' '
       fwrtpr3(f)       = ' '
@@ -645,11 +611,6 @@ CONTAINS
       fwrtpr8(f)       = ' '
       fwrtpr9(f)       = ' '
       fwrtpr10(f)      = ' '
-      fwrtpr11(f)      = ' '
-      fwrtpr12(f)      = ' '
-      fwrtpr13(f)      = ' '
-      fwrtpr14(f)      = ' '
-      fwrtpr15(f)      = ' '
     end do
 
     if (trim(history_namelist) /= 'cam_history_nl') then
@@ -680,11 +641,6 @@ CONTAINS
         fincl(f, 8) = fincl8(f)
         fincl(f, 9) = fincl9(f)
         fincl(f,10) = fincl10(f)
-        fincl(f,11) = fincl11(f)
-        fincl(f,12) = fincl12(f)
-        fincl(f,13) = fincl13(f)
-        fincl(f,14) = fincl14(f)
-        fincl(f,15) = fincl15(f)
 
         fincllonlat(f, 1) = fincl1lonlat(f)
         fincllonlat(f, 2) = fincl2lonlat(f)
@@ -696,11 +652,6 @@ CONTAINS
         fincllonlat(f, 8) = fincl8lonlat(f)
         fincllonlat(f, 9) = fincl9lonlat(f)
         fincllonlat(f,10) = fincl10lonlat(f)
-        fincllonlat(f,11) = fincl11lonlat(f)
-        fincllonlat(f,12) = fincl12lonlat(f)
-        fincllonlat(f,13) = fincl13lonlat(f)
-        fincllonlat(f,14) = fincl14lonlat(f)
-        fincllonlat(f,15) = fincl15lonlat(f)
 
         fexcl(f, 1) = fexcl1(f)
         fexcl(f, 2) = fexcl2(f)
@@ -712,11 +663,6 @@ CONTAINS
         fexcl(f, 8) = fexcl8(f)
         fexcl(f, 9) = fexcl9(f)
         fexcl(f,10) = fexcl10(f)
-        fexcl(f,11) = fexcl11(f)
-        fexcl(f,12) = fexcl12(f)
-        fexcl(f,13) = fexcl13(f)
-        fexcl(f,14) = fexcl14(f)
-        fexcl(f,15) = fexcl15(f)
 
         fwrtpr(f, 1) = fwrtpr1(f)
         fwrtpr(f, 2) = fwrtpr2(f)
@@ -728,11 +674,6 @@ CONTAINS
         fwrtpr(f, 8) = fwrtpr8(f)
         fwrtpr(f, 9) = fwrtpr9(f)
         fwrtpr(f,10) = fwrtpr10(f)
-        fwrtpr(f,11) = fwrtpr11(f)
-        fwrtpr(f,12) = fwrtpr12(f)
-        fwrtpr(f,13) = fwrtpr13(f)
-        fwrtpr(f,14) = fwrtpr14(f)
-        fwrtpr(f,15) = fwrtpr15(f)
       end do
 
       !
@@ -1619,7 +1560,10 @@ CONTAINS
     character(len=max_string_len)  :: locfn       ! Local filename
     character(len=max_fieldname_len), allocatable :: tmpname(:,:)
     integer, allocatable :: decomp(:,:), tmpnumlev(:,:)
-    integer, pointer :: nacs(:,:)    ! accumulation counter
+    ! YQIN
+!    integer, pointer :: nacs(:,:)    ! accumulation counter
+    integer, pointer :: nacs(:,:,:)    ! accumulation counter
+
     character(len=max_fieldname_len) :: fname_tmp ! local copy of field name
     character(len=max_fieldname_len) :: dname_tmp ! local copy of dim name
 
@@ -1898,9 +1842,14 @@ CONTAINS
         end if
         nullify(tape(t)%hlist(f)%nacs)
         if(tape(t)%hlist(f)%field%flag_xyfill .or. (avgflag_pertape(t)=='L')) then
-          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+        ! YQIN
+!          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         else
-          allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+        ! YQIN
+!          allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
+
         end if
         ! initialize all buffers to zero - this will be overwritten later by the
         ! data in the history restart file if it exists.
@@ -1996,19 +1945,30 @@ CONTAINS
           ierr = pio_inq_varid(tape(t)%File, trim(fname_tmp)//'_nacs', vdesc)
           call cam_pio_var_info(tape(t)%File, vdesc, nacsdimcnt, dimids, dimlens)
 
-          if(nacsdimcnt > 0) then
-            if (nfdims > 2) then
-              ! nacs only has 2 dims (no levels)
-              fdims(2) = fdims(3)
-            end if
-            allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
-            nacs       => tape(t)%hlist(f)%nacs(:,:)
-            call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:2),  &
-                 dimlens(1:nacsdimcnt), nacs, vdesc)
+! YQIN
+!          if(nacsdimcnt > 0) then
+!            if (nfdims > 2) then
+!              ! nacs only has 2 dims (no levels)
+!              fdims(2) = fdims(3)
+!            end if
+!            allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+!            nacs       => tape(t)%hlist(f)%nacs(:,:)
+!            call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:2),  &
+!                 dimlens(1:nacsdimcnt), nacs, vdesc)
+!          else
+!            allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+!            ierr = pio_get_var(tape(t)%File, vdesc, nacsval)
+!            tape(t)%hlist(f)%nacs(1,:)= nacsval
+!          end if
+
+          write(*,*) "YQIN fname_tmp", trim(fname_tmp), "nfdims=",nfdims,"ndims=",ndims, "nacsdimcnt=", nacsdimcnt, "dimlens=",dimlens, "fdims(1:3)=", fdims(1:3)
+          nacs       => tape(t)%hlist(f)%nacs(:,:,:)
+          if (nfdims > 2) then
+              call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:nfdims),  &
+                   dimlens(1:nacsdimcnt), nacs, vdesc)
           else
-            allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
-            ierr = pio_get_var(tape(t)%File, vdesc, nacsval)
-            tape(t)%hlist(f)%nacs(1,:)= nacsval
+              call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:nfdims),  &
+                   dimlens(1:nacsdimcnt), nacs, vdesc)
           end if
 
         end do
@@ -3056,7 +3016,8 @@ end subroutine print_active_fldlst
   recursive subroutine outfld (fname, field, idim, c, avg_subcol_field)
     use cam_history_buffers, only: hbuf_accum_inst, hbuf_accum_add,  &
          hbuf_accum_add00z, hbuf_accum_max, hbuf_accum_min,          &
-         hbuf_accum_addlcltime
+         hbuf_accum_addlcltime, &
+         hbuf_accum_add
     use cam_history_support, only: dim_index_2d
     use subcol_utils,        only: subcol_unpack
     use cam_grid_support,    only: cam_grid_id
@@ -3115,7 +3076,10 @@ end subroutine print_active_fldlst
 
     type (active_entry), pointer :: otape(:) ! Local history_tape pointer
     real(r8),pointer      :: hbuf(:,:)     ! history buffer
-    integer, pointer      :: nacs(:)       ! accumulation counter
+    ! YQIN
+    !integer, pointer      :: nacs(:)       ! accumulation counter
+    integer, pointer      :: nacs(:,:)       ! accumulation counter
+
     integer               :: begdim2, enddim2, endi
     integer               :: phys_decomp
     type (dim_index_2d)   :: dimind        ! 2-D dimension index
@@ -3128,6 +3092,9 @@ end subroutine print_active_fldlst
     logical               :: found
     logical               :: avg_subcols   ! average subcols before accum
     !-----------------------------------------------------------------------
+
+    !write(*,*) "YQIN c=", c, "idim=", idim
+
 
     call get_field_properties(fname, found, tape_out=otape, ff_out=ff)
     phys_decomp = cam_grid_id('physgrid')
@@ -3151,7 +3118,9 @@ end subroutine print_active_fldlst
       flag_xyfill = otape(t)%hlist(f)%field%flag_xyfill
       fillvalue = otape(t)%hlist(f)%field%fillvalue
       avgflag = otape(t)%hlist(f)%avgflag
-      nacs   => otape(t)%hlist(f)%nacs(:,c)
+      !nacs   => otape(t)%hlist(f)%nacs(:,c)
+      nacs   => otape(t)%hlist(f)%nacs(:,:,c)
+
       hbuf => otape(t)%hlist(f)%hbuf(:,:,c)
 
       dimind = otape(t)%hlist(f)%field%get_dims(c)
@@ -3217,7 +3186,7 @@ end subroutine print_active_fldlst
                flag_xyfill, fillvalue)
           
         case ('A') ! Time average
-          call hbuf_accum_add(hbuf, ufield, nacs, dimind, pcols,         &
+          call hbuf_accum_add(hbuf, ufield, nacs, dimind, pcols,         & !YQIN
                flag_xyfill, fillvalue)
 
         case ('B') ! Time average only 00z values
@@ -3251,7 +3220,7 @@ end subroutine print_active_fldlst
                flag_xyfill, fillvalue)
 
         case ('A') ! Time average
-          call hbuf_accum_add(hbuf, field, nacs, dimind, idim,           &
+          call hbuf_accum_add(hbuf, field, nacs, dimind, idim,           & ! YQIN
                flag_xyfill, fillvalue)
 
         case ('B') ! Time average only 00z values
@@ -3282,6 +3251,238 @@ end subroutine print_active_fldlst
 
     return
   end subroutine outfld
+
+
+!!  recursive subroutine outfld (fname, field, idim, c, avg_subcol_field)
+!!    use cam_history_buffers, only: hbuf_accum_inst, hbuf_accum_add,  &
+!!         hbuf_accum_add00z, hbuf_accum_max, hbuf_accum_min,          &
+!!         hbuf_accum_addlcltime
+!!    use cam_history_support, only: dim_index_2d
+!!    use subcol_utils,        only: subcol_unpack
+!!    use cam_grid_support,    only: cam_grid_id
+!!
+!!    interface
+!!      subroutine subcol_field_avg_handler(idim, field_in, c, field_out)
+!!        use shr_kind_mod, only: r8 => shr_kind_r8
+!!        integer,  intent(in)  :: idim
+!!        real(r8), intent(in)  :: field_in(idim, *)
+!!        integer,  intent(in)  :: c
+!!        real(r8), intent(out) :: field_out(:,:)
+!!      end subroutine subcol_field_avg_handler
+!!    end interface
+!!
+!!    !
+!!    !----------------------------------------------------------------------- 
+!!    ! 
+!!    ! Purpose: Accumulate (or take min, max, etc. as appropriate) input field
+!!    !          into its history buffer for appropriate tapes
+!!    ! 
+!!    ! Method: Check 'masterlist' whether the requested field 'fname' is active
+!!    !         on one or more history tapes, and if so do the accumulation.
+!!    !         If not found, return silently.
+!!    !         subcol_field_avg_handler:
+!!    !            An interface into subcol_field_avg without creating a dependency as
+!!    !            this would cause a dependency loop. See subcol.F90
+!!    ! Note: We cannot know a priori if field is a grid average field or a subcolumn
+!!    !       field because many fields passed to outfld are defined on ncol rather
+!!    !       than pcols or psetcols. Therefore, we use the avg_subcol_field input
+!!    !       to determine whether to average the field input before accumulation.
+!!    !       NB: If output is on a subcolumn grid (requested in addfle), it is
+!!    !           an error to use avg_subcol_field. A subcolumn field is assumed and
+!!    !           subcol_unpack is called before accumulation.
+!!    ! 
+!!    ! Author: CCM Core Group
+!!    ! 
+!!    !-----------------------------------------------------------------------
+!!    !
+!!    ! Arguments
+!!    !
+!!    character(len=*), intent(in) :: fname ! Field name--should be 8 chars long
+!!
+!!    ! For structured grids, idim is the local longitude dimension.
+!!    ! For unstructured grids, idim is the local column dimension
+!!    ! For phys_decomp, it should be pcols or pcols*psubcols
+!!    integer, intent(in)           :: idim
+!!    real(r8), intent(in)          :: field(idim,*) ! Array containing field values
+!!    integer, intent(in)           :: c             ! chunk (physics) or latitude (dynamics) index
+!!    logical, optional, intent(in) :: avg_subcol_field
+!!    !
+!!    ! Local variables
+!!    !
+!!    integer               :: t, f          ! tape, field indices
+!!
+!!    character*1           :: avgflag       ! averaging flag
+!!
+!!    type (active_entry), pointer :: otape(:) ! Local history_tape pointer
+!!    real(r8),pointer      :: hbuf(:,:)     ! history buffer
+!!    integer, pointer      :: nacs(:)       ! accumulation counter
+!!    integer               :: begdim2, enddim2, endi
+!!    integer               :: phys_decomp
+!!    type (dim_index_2d)   :: dimind        ! 2-D dimension index
+!!    logical               :: flag_xyfill   ! non-applicable xy points flagged with fillvalue
+!!    real(r8)              :: fillvalue
+!!    real(r8), allocatable :: afield(:,:)   ! Averaged field values
+!!    real(r8), allocatable :: ufield(:,:,:) ! Unpacked field values
+!!    integer               :: ff            ! masterlist index pointer
+!!    integer               :: i, j
+!!    logical               :: found
+!!    logical               :: avg_subcols   ! average subcols before accum
+!!    !-----------------------------------------------------------------------
+!!
+!!
+!!    call get_field_properties(fname, found, tape_out=otape, ff_out=ff)
+!!    phys_decomp = cam_grid_id('physgrid')
+!!
+!!    ! If this field is not active, return now
+!!    if (.not. found) then
+!!      return
+!!    end if
+!!
+!!    !
+!!    ! Note, the field may be on any or all of the history files (primary
+!!    ! and auxiliary).
+!!    !
+!!    !      write(iulog,*)'fname_loc=',fname_loc
+!!    do t = 1, ptapes
+!!      if ( .not. masterlist(ff)%thisentry%actflag(t)) cycle
+!!      f = masterlist(ff)%thisentry%htapeindx(t)
+!!      !
+!!      ! Update history buffer
+!!      !
+!!      flag_xyfill = otape(t)%hlist(f)%field%flag_xyfill
+!!      fillvalue = otape(t)%hlist(f)%field%fillvalue
+!!      avgflag = otape(t)%hlist(f)%avgflag
+!!      nacs   => otape(t)%hlist(f)%nacs(:,c)
+!!      hbuf => otape(t)%hlist(f)%hbuf(:,:,c)
+!!
+!!      dimind = otape(t)%hlist(f)%field%get_dims(c)
+!!
+!!      ! See notes above about validity of avg_subcol_field
+!!      if (otape(t)%hlist(f)%field%is_subcol) then
+!!        if (present(avg_subcol_field)) then
+!!          call endrun('OUTFLD: Cannot average '//trim(fname)//', subcolumn output was requested in addfld')
+!!        end if
+!!        avg_subcols = .false.
+!!      else if (otape(t)%hlist(f)%field%decomp_type == phys_decomp) then
+!!        if (present(avg_subcol_field)) then
+!!          avg_subcols = avg_subcol_field
+!!        else
+!!          avg_subcols = .false.
+!!        end if
+!!      else ! Any dynamics decomposition
+!!        if (present(avg_subcol_field)) then
+!!          call endrun('OUTFLD: avg_subcol_field only valid for physgrid')
+!!        else
+!!          avg_subcols = .false.
+!!        end if
+!!      end if
+!!
+!!      begdim2 = otape(t)%hlist(f)%field%begdim2
+!!      enddim2 = otape(t)%hlist(f)%field%enddim2
+!!      if (avg_subcols) then
+!!        allocate(afield(pcols, begdim2:enddim2))
+!!        call subcol_field_avg_handler(idim, field, c, afield)
+!!        ! Hack! Avoid duplicating select statement below
+!!        call outfld(fname, afield, pcols, c)
+!!        deallocate(afield)
+!!      else if (otape(t)%hlist(f)%field%is_subcol) then
+!!        ! We have to assume that using mdimnames (e.g., psubcols) is
+!!        ! incompatible with the begdimx, enddimx usage (checked in addfld)
+!!        ! Since psubcols is included in levels, take that out
+!!        endi = (enddim2 - begdim2 + 1) / psubcols
+!!        allocate(ufield(pcols, psubcols, endi))
+!!        allocate(afield(pcols*psubcols, endi))
+!!        do j = 1, endi
+!!          do i = 1, idim
+!!            afield(i, j) = field(i, j)
+!!          end do
+!!        end do
+!!        ! Initialize unused aray locations.
+!!        if (idim < pcols*psubcols) then
+!!          if (flag_xyfill) then
+!!            afield(idim+1:pcols*psubcols, :) = fillvalue
+!!          else
+!!            afield(idim+1:pcols*psubcols, :) = 0.0_r8
+!!          end if
+!!        end if
+!!        if (flag_xyfill) then
+!!          call subcol_unpack(c, afield, ufield, fillvalue)
+!!        else
+!!          call subcol_unpack(c, afield, ufield)
+!!        end if
+!!        deallocate(afield)
+!!        select case (avgflag)
+!!
+!!        case ('I') ! Instantaneous
+!!          call hbuf_accum_inst(hbuf, ufield, nacs, dimind, pcols,        &
+!!               flag_xyfill, fillvalue)
+!!          
+!!        case ('A') ! Time average
+!!          call hbuf_accum_add(hbuf, ufield, nacs, dimind, pcols,         &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('B') ! Time average only 00z values
+!!          call hbuf_accum_add00z(hbuf, ufield, nacs, dimind, pcols,      &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('X') ! Maximum over time
+!!          call hbuf_accum_max (hbuf, ufield, nacs, dimind, pcols,        &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('M') ! Minimum over time
+!!          call hbuf_accum_min(hbuf, ufield, nacs, dimind, pcols,         &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('L')
+!!          call hbuf_accum_addlcltime(hbuf, ufield, nacs, dimind, pcols,   &
+!!               flag_xyfill, fillvalue, c,                                &
+!!               otape(t)%hlist(f)%field%decomp_type,                      &
+!!               lcltod_start(t), lcltod_stop(t))
+!!
+!!        case default
+!!          call endrun ('OUTFLD: invalid avgflag='//avgflag)
+!!
+!!        end select
+!!        deallocate(ufield)
+!!      else
+!!        select case (avgflag)
+!!
+!!        case ('I') ! Instantaneous
+!!          call hbuf_accum_inst(hbuf, field, nacs, dimind, idim,          &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('A') ! Time average
+!!          call hbuf_accum_add(hbuf, field, nacs, dimind, idim,           &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('B') ! Time average only 00z values
+!!          call hbuf_accum_add00z(hbuf, field, nacs, dimind, idim,        &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('X') ! Maximum over time
+!!          call hbuf_accum_max (hbuf, field, nacs, dimind, idim,          &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('M') ! Minimum over time
+!!          call hbuf_accum_min(hbuf, field, nacs, dimind, idim,           &
+!!               flag_xyfill, fillvalue)
+!!
+!!        case ('L')
+!!          call hbuf_accum_addlcltime(hbuf, field, nacs, dimind, idim,    &
+!!               flag_xyfill, fillvalue, c,                                &
+!!               otape(t)%hlist(f)%field%decomp_type,                      &
+!!               lcltod_start(t), lcltod_stop(t))
+!!
+!!        case default
+!!          call endrun ('OUTFLD: invalid avgflag='//avgflag)
+!!
+!!        end select
+!!      end if
+!!
+!!    end do
+!!
+!!    return
+!!  end subroutine outfld
 
   !#######################################################################
 
@@ -3700,6 +3901,7 @@ end subroutine print_active_fldlst
     integer :: chardim            ! character dimension id
     integer :: dimenchar(2)       ! character dimension ids
     integer :: nacsdims(2)        ! dimension ids for nacs (used in restart file)
+
     integer :: bnddim             ! bounds dimension id
     integer :: timdim             ! unlimited dimension id
 
@@ -4179,14 +4381,20 @@ end subroutine print_active_fldlst
           if (.not. associated(tape(t)%hlist(f)%nacs_varid)) then
             allocate(tape(t)%hlist(f)%nacs_varid)
           end if
-          if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
-            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
-                 nacsdims(1:num_hdims), tape(t)%hlist(f)%nacs_varid)
-          else
-            ! Save just one value representing all chunks
-            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
-                 tape(t)%hlist(f)%nacs_varid)
-          end if
+
+! YQIN 
+!          if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
+!            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
+!                 nacsdims(1:num_hdims), tape(t)%hlist(f)%nacs_varid)
+!          else
+!            ! Save just one value representing all chunks
+!            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
+!                 tape(t)%hlist(f)%nacs_varid)
+!          end if
+
+          call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
+               dimids_tmp(1:fdims), tape(t)%hlist(f)%nacs_varid)
+
         end if
       end do ! Loop over output patches
     end do   ! Loop over fields
@@ -4310,7 +4518,10 @@ end subroutine print_active_fldlst
 
       if (flag_xyfill) then
         do k = jb, je
-          where (tape(t)%hlist(f)%nacs(ib:ie, c) == 0)
+          ! YQIN
+!          where (tape(t)%hlist(f)%nacs(ib:ie, c) == 0)
+          where (tape(t)%hlist(f)%nacs(ib:ie, k, c) == 0)
+
             tape(t)%hlist(f)%hbuf(ib:ie,k,c) = tape(t)%hlist(f)%field%fillvalue
           endwhere
         end do
@@ -4319,18 +4530,19 @@ end subroutine print_active_fldlst
       if (avgflag == 'A' .or. avgflag == 'B' .or. avgflag == 'L') then
         if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
           do k = jb, je
-            where (tape(t)%hlist(f)%nacs(ib:ie,c) /= 0)
+            where (tape(t)%hlist(f)%nacs(ib:ie,k,c) /= 0)
               tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
                    tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
-                   / tape(t)%hlist(f)%nacs(ib:ie,c)
+                   / tape(t)%hlist(f)%nacs(ib:ie,k,c)
             endwhere
           end do
-        else if(tape(t)%hlist(f)%nacs(1,c) > 0) then
-          do k=jb,je
-            tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
-                 tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
-                 / tape(t)%hlist(f)%nacs(1,c)
-          end do
+!        else if(tape(t)%hlist(f)%nacs(1,1,c) > 0) then
+!
+!          do k=jb,je
+!            tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
+!                 tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
+!                 / tape(t)%hlist(f)%nacs(1,k,c)
+!          end do
         end if
       end if
     end do
@@ -4371,7 +4583,8 @@ end subroutine print_active_fldlst
       dimind = tape(t)%hlist(f)%field%get_dims(c)
       tape(t)%hlist(f)%hbuf(dimind%beg1:dimind%end1,dimind%beg2:dimind%end2,c)=0._r8
     end do
-    tape(t)%hlist(f)%nacs(:,:) = 0
+!    tape(t)%hlist(f)%nacs(:,:) = 0
+    tape(t)%hlist(f)%nacs(:,:,:) = 0
 
     call t_stopf ('h_zero')
 
@@ -4496,19 +4709,28 @@ end subroutine print_active_fldlst
     end do
     !! NACS
     if(restart) then
-      if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
-        if (nadims > 2) then
-          adims(2) = adims(3)
-          nadims = 2
-        end if
-        call cam_grid_dimensions(fdecomp, fdims(1:2), nacsrank)
-        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims(1:nadims),&
-             fdims(1:nacsrank), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+! YQIN
+!      if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
+!        if (nadims > 2) then
+!          adims(2) = adims(3)
+!          nadims = 2
+!        end if
+!        call cam_grid_dimensions(fdecomp, fdims(1:2), nacsrank)
+!        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims(1:nadims),&
+!             fdims(1:nacsrank), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+!
+!        else
+!          ierr = pio_put_var(tape(t)%File, tape(t)%hlist(f)%nacs_varid,     &
+!               tape(t)%hlist(f)%nacs(:, tape(t)%hlist(f)%field%begdim3:tape(t)%hlist(f)%field%enddim3))
+!        end if
 
-        else
-          ierr = pio_put_var(tape(t)%File, tape(t)%hlist(f)%nacs_varid,     &
-               tape(t)%hlist(f)%nacs(:, tape(t)%hlist(f)%field%begdim3:tape(t)%hlist(f)%field%enddim3))
-        end if
+        !call cam_grid_dimensions(fdecomp, fdims(1:1), nacsrank)
+!        write(*,*) "YQIN fdims=", fdims, "frank=", frank
+!        write(*,*) "YQIN nadims=", nadims, "nacsrank=", nacsrank, "adims=", adims, "fdecomp=", fdecomp
+
+        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims,&
+             fdims(1:3), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+
       end if
 
     return
