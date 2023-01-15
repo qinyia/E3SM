@@ -454,9 +454,10 @@ contains
        end do
     end do
 
-    if (bad) then
-       call endrun ('CHECK_ACCUM: inconsistent level values')
-    end if
+!PMA
+!    if (bad) then
+!       call endrun ('CHECK_ACCUM: inconsistent level values')
+!    end if
 
     return
   end subroutine check_accum

@@ -24,6 +24,9 @@
 <dtime dyn="se"    hgrid="ne0np4_svalbard_x8v1_lowcon"  >600</dtime>
 <dtime dyn="se"    hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  >600</dtime>
 <dtime dyn="se"    hgrid="ne0np4_enax4v1">900</dtime>
+<dtime dyn="se"    hgrid="ne0np4_sox4v3.pg2">900</dtime>
+<dtime dyn="se"    hgrid="ne0np4_sox8v3.pg2">900</dtime>
+<dtime dyn="se"    hgrid="ne0np4_sox32v3.pg2">900</dtime>
 <dtime dyn="se"    hgrid="ne0np4_twpx4v1">900</dtime>
 
 <dtime dyn="sld"                   >3600</dtime>
@@ -115,7 +118,10 @@
 <!-- Initial condition file for ENA RRM grid from 1 year spin-up -->
 <!-- (starting from initial file interpolated using interpic) -->
 <ncdata dyn="se" hgrid="ne0np4_enax4v1" nlev="72">atm/cam/inic/homme/cami_0002-01-01_enax4v1_L72_c170706.nc</ncdata>
-
+<!-- update below  with sox initial conditions file) -->
+<ncdata dyn="se" hgrid="ne0np4_sox4v3.pg2" nlev="72">/global/project/projectdirs/m3525/crjones/socrates/1timestep/HICCUP.atm_era5.2018-01-15.sox4v3pg2.L72.nc</ncdata>
+<ncdata dyn="se" hgrid="ne0np4_sox8v3.pg2" nlev="72">/global/project/projectdirs/m3525/crjones/socrates/1timestep/HICCUP.atm_era5.2018-01-15.sox8v3pg2.L72.nc</ncdata>
+<ncdata dyn="se" hgrid="ne0np4_sox32v3.pg2" nlev="72">/global/project/projectdirs/m3525/crjones/socrates/1timestep/HICCUP.atm_era5.2018-01-15.sox32v3pg2.L72.nc</ncdata>
 
 <!-- Topography -->
 <bnd_topo hgrid="64x128"  >atm/cam/topo/USGS-gtopo30_64x128_c050520.nc</bnd_topo>
@@ -150,6 +156,10 @@
 <bnd_topo hgrid="ne0np4_svalbard_x8v1_lowcon"  >atm/cam/topo/USGS_svalbardx8v1-tensor12x_c150612.nc</bnd_topo>
 <bnd_topo hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  >atm/cam/topo/USGS_sooberingoax4x8v1-tensor12x_c150612.nc</bnd_topo>
 <bnd_topo hgrid="ne0np4_enax4v1">atm/cam/topo/USGS_enax4v1_tensorx12_consistentSGH_170522.nc</bnd_topo>
+
+<bnd_topo hgrid="ne0np4_sox4v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/USGS-gtopo30_sox4v3pg2_12xdel2.nc</bnd_topo>
+<bnd_topo hgrid="ne0np4_sox8v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/USGS-gtopo30_sox8v3pg2_12xdel2.nc</bnd_topo>
+<bnd_topo hgrid="ne0np4_sox32v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/USGS-gtopo30_sox32v3pg2_12xdel2.nc</bnd_topo>
 <bnd_topo hgrid="ne0np4_twpx4v1" >atm/cam/topo/USGS_twpx4v1_tensor12x_consistentSGH_170629.nc</bnd_topo>
 
 <!-- ieflx_opt 0: atmonly, 3: coupled -->
@@ -696,6 +706,10 @@
 <drydep_srf_file hgrid="ne0np4_twpx4v1">atm/cam/chem/trop_mam/atmsrf_twpx4v1_170629.nc</drydep_srf_file>
 <!-- NOTE: ENA dry deposition file interpolated from existing rather than created new -->
 <drydep_srf_file hgrid="ne0np4_enax4v1">atm/cam/chem/trop_mam/atmsrf_enax4v1_170517.nc</drydep_srf_file>
+<!-- update sox dry dep file below -->
+<drydep_srf_file hgrid="ne0np4_sox4v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/atmsrf_sox4v3pg2_20220218.nc</drydep_srf_file>
+<drydep_srf_file hgrid="ne0np4_sox8v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/atmsrf_sox8v3pg2_20220218.nc</drydep_srf_file>
+<drydep_srf_file hgrid="ne0np4_sox32v3" npg="2">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/atmsrf_sox32v3pg2_20220218.nc</drydep_srf_file>
 
 <!-- depvel data -->
 <depvel_file    >atm/cam/chem/trop_mozart/dvel/depvel_monthly.nc</depvel_file>
@@ -1231,6 +1245,9 @@
 <se_ne hgrid="ne0np4_svalbard_x8v1_lowcon"  > 0 </se_ne>
 <se_ne hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 0 </se_ne>
 <se_ne hgrid="ne0np4_enax4v1">0</se_ne>
+<se_ne hgrid="ne0np4_sox4v3">0</se_ne>
+<se_ne hgrid="ne0np4_sox8v3">0</se_ne>
+<se_ne hgrid="ne0np4_sox32v3">0</se_ne>
 <se_ne hgrid="ne0np4_twpx4v1" > 0 </se_ne>
 
 <mesh_file>/dev/null</mesh_file>
@@ -1241,6 +1258,9 @@
 <mesh_file hgrid="ne0np4_svalbard_x8v1_lowcon"  >atm/cam/inic/homme/svalbardx8v1.g</mesh_file>
 <mesh_file hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  >atm/cam/inic/homme/sooberingoax4x8v1.g</mesh_file>
 <mesh_file hgrid="ne0np4_enax4v1">atm/cam/inic/homme/enax4v1.g</mesh_file>
+<mesh_file hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/sox4v3.g</mesh_file>
+<mesh_file hgrid="ne0np4_sox8v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/sox8v3.g</mesh_file>
+<mesh_file hgrid="ne0np4_sox32v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/sox32v3.g</mesh_file>
 <mesh_file hgrid="ne0np4_twpx4v1" >atm/cam/inic/homme/twpx4v1.g</mesh_file>
 
 <!-- viscosity  -->
@@ -1256,6 +1276,9 @@
 <nu_top dyn_target="theta-l" hgrid="ne0np4_antarcticax4v1"> 1e5 </nu_top>
 <nu_top dyn_target="theta-l" hgrid="ne0np4_conus_x4v1_lowcon"> 1e5 </nu_top>
 <nu_top dyn_target="theta-l" hgrid="ne0np4_enax4v1"> 1e5 </nu_top>
+<nu_top dyn_target="theta-l" hgrid="ne0np4_sox4v3"> 1e5 </nu_top>
+<nu_top dyn_target="theta-l" hgrid="ne0np4_sox8v3"> 1e5 </nu_top>
+<nu_top dyn_target="theta-l" hgrid="ne0np4_sox32v3"> 1e5 </nu_top>
 <nu_top dyn_target="theta-l" hgrid="ne0np4_twpx4v1"> 1e5 </nu_top>
 
 
@@ -1299,6 +1322,9 @@
 <se_tstep dyn_target="theta-l" hgrid="ne0np4_antarcticax4v1"> 75 </se_tstep>
 <se_tstep dyn_target="theta-l" hgrid="ne0np4_conus_x4v1_lowcon"> 75 </se_tstep>
 <se_tstep dyn_target="theta-l" hgrid="ne0np4_enax4v1"> 75 </se_tstep>
+<se_tstep dyn_target="theta-l" hgrid="ne0np4_sox4v3"> 75 </se_tstep>
+<se_tstep dyn_target="theta-l" hgrid="ne0np4_sox8v3"> 75 </se_tstep>
+<se_tstep dyn_target="theta-l" hgrid="ne0np4_sox32v3"> 75 </se_tstep>
 <se_tstep dyn_target="theta-l" hgrid="ne0np4_twpx4v1"> 75 </se_tstep>
 
 
@@ -1330,6 +1356,9 @@
 <hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_antarcticax4v1"   > 2 </hypervis_subcycle>
 <hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_twpx4v1"   > 2 </hypervis_subcycle>
 <hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_enax4v1"   > 2 </hypervis_subcycle>
+<hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_sox4v3"   > 2 </hypervis_subcycle>
+<hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_sox8v3"   > 2 </hypervis_subcycle>
+<hypervis_subcycle dyn_target="theta-l" hgrid="ne0np4_sox32v3"   > 2 </hypervis_subcycle>
 
 
 <!-- Modifications for MMF, which uses a shorter physics time step for stability (20 min for ne4, ne30)-->
@@ -1375,6 +1404,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <nu dyn_target="preqx" hgrid="ne0np4_svalbard_x8v1_lowcon"  > 8.0e-8</nu>
 <nu dyn_target="preqx" hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 8.0e-8</nu>
 <nu dyn_target="preqx" hgrid="ne0np4_enax4v1">8.0e-8</nu>
+<nu dyn_target="preqx" hgrid="ne0np4_sox4v3">8.0e-8</nu>
+<nu dyn_target="preqx" hgrid="ne0np4_sox8v3">8.0e-8</nu>
+<nu dyn_target="preqx" hgrid="ne0np4_sox32v3">8.0e-8</nu>
 <nu dyn_target="preqx" hgrid="ne0np4_twpx4v1" >8.0e-8</nu>
 
 <!-- preqx uses nu_div = 2.5*nu -->
@@ -1395,6 +1427,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <nu_div dyn_target="preqx" hgrid="ne0np4_svalbard_x8v1_lowcon"  > 20.0e-8</nu_div>
 <nu_div dyn_target="preqx" hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 20.0e-8</nu_div>
 <nu_div dyn_target="preqx" hgrid="ne0np4_enax4v1">20.0e-8</nu_div>
+<nu_div dyn_target="preqx" hgrid="ne0np4_sox4v3">20.0e-8</nu_div>
+<nu_div dyn_target="preqx" hgrid="ne0np4_sox8v3">20.0e-8</nu_div>
+<nu_div dyn_target="preqx" hgrid="ne0np4_sox32v3">20.0e-8</nu_div>
 <nu_div dyn_target="preqx" hgrid="ne0np4_twpx4v1" >20.0e-8</nu_div>
 
 <hypervis_scaling dyn_target="preqx" > 0 </hypervis_scaling>
@@ -1405,6 +1440,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_svalbard_x8v1_lowcon"  > 3.2 </hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 3.2 </hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_enax4v1">3.2</hypervis_scaling>
+<hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sox4v3">3.2</hypervis_scaling>
+<hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sox8v3">3.2</hypervis_scaling>
+<hypervis_scaling dyn_target="preqx" hgrid="ne0np4_sox32v3">3.2</hypervis_scaling>
 <hypervis_scaling dyn_target="preqx" hgrid="ne0np4_twpx4v1" > 3.2 </hypervis_scaling>
 
 
@@ -1447,6 +1485,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <se_nsplit dyn_target="preqx" hgrid="ne0np4_svalbard_x8v1_lowcon"  > 5 </se_nsplit>
 <se_nsplit dyn_target="preqx" hgrid="ne0np4_sooberingoa_x4x8v1_lowcon"  > 5 </se_nsplit>
 <se_nsplit dyn_target="preqx" hgrid="ne0np4_enax4v1">4</se_nsplit>
+<se_nsplit dyn_target="preqx" hgrid="ne0np4_sox4v3">4</se_nsplit>
+<se_nsplit dyn_target="preqx" hgrid="ne0np4_sox8v3">4</se_nsplit>
+<se_nsplit dyn_target="preqx" hgrid="ne0np4_sox32v3">4</se_nsplit>
 <se_nsplit dyn_target="preqx" hgrid="ne0np4_twpx4v1" > 4 </se_nsplit>
 
 
@@ -1467,6 +1508,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <hypervis_subcycle hgrid="ne0np4_svalbard_x8v1_lowcon" dyn_target="preqx" > 8 </hypervis_subcycle>
 <hypervis_subcycle hgrid="ne0np4_sooberingoa_x4x8v1_lowcon" dyn_target="preqx"  > 8 </hypervis_subcycle>
 <hypervis_subcycle hgrid="ne0np4_enax4v1" dyn_target="preqx">7</hypervis_subcycle>
+<hypervis_subcycle hgrid="ne0np4_sox4v3" dyn_target="preqx">7</hypervis_subcycle>
+<hypervis_subcycle hgrid="ne0np4_sox8v3" dyn_target="preqx">7</hypervis_subcycle>
+<hypervis_subcycle hgrid="ne0np4_sox32v3" dyn_target="preqx">7</hypervis_subcycle>
 <hypervis_subcycle hgrid="ne0np4_twpx4v1" dyn_target="preqx"> 7 </hypervis_subcycle>
 
 
@@ -1577,6 +1621,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <fatmlndfrc hgrid="ne240np4"  >share/domains/domain.lnd.ne240np4_gx1v6.120125.nc</fatmlndfrc>
 
 <fatmlndfrc hgrid="ne0np4_enax4v1">share/domains/domain.lnd.enax4v1_oRRS18to6.170621.nc</fatmlndfrc>
+<fatmlndfrc hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.lnd.sox4v3pg2_oRRS18to6v3.220218.nc</fatmlndfrc>
+<fatmlndfrc hgrid="ne0np4_sox8v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/domain.lnd.sox8v3pg2_oRRS18to6v3.220220.nc</fatmlndfrc>
+<fatmlndfrc hgrid="ne0np4_sox32v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/domain.lnd.sox32v3pg2_oRRS18to6v3.220220.nc</fatmlndfrc>
 
 <!-- SNICAR (SNow, ICe, and Aerosol Radiative model) datasets -->
 <fsnowoptics >lnd/clm2/snicardata/snicar_optics_5bnd_mam_c160322.nc</fsnowoptics>
@@ -1618,7 +1665,9 @@ with se_tstep, dt_remap_factor, dt_tracer_factor set to -1
 <focndomain hgrid="ne240np4"  >share/domains/domain.ocn.ne240np4_gx1v6.111226.nc</focndomain>
 
 <focndomain hgrid="ne0np4_enax4v1">share/domains/domain.ocn.enax4v1_oRRS18to6.170621.nc</focndomain>
-
+<focndomain hgrid="ne0np4_sox4v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.ocn.sox4v3pg2_oRRS18to6v3.220218.nc</focndomain>
+<focndomain hgrid="ne0np4_sox8v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/domain.ocn.sox8v3pg2_oRRS18to6v3.220220.nc</focndomain>
+<focndomain hgrid="ne0np4_sox32v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/domain.ocn.sox32v3pg2_oRRS18to6v3.220220.nc</focndomain>
 <!-- set default parameter values for v2, moved from use_case file -->
 
 <!-- Ice nucleation mods-->
