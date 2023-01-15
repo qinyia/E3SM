@@ -120,6 +120,9 @@ logical :: dem_in            = .false.           ! use DeMott IN
 
 integer :: npccn_idx, rndst_idx, nacon_idx
 
+! YQIN 10/20/22
+integer :: ccn02_idx ! index of CCN concentration at supersaturation=0.2%
+
 logical  :: separate_dust = .false.
 logical  :: liqcf_fix
 real(r8), parameter :: unset_r8   = huge(1.0_r8)
@@ -146,6 +149,9 @@ subroutine microp_aero_register
    call pbuf_add_field('RNDST',      'physpkg',dtype_r8,(/pcols,pver,4/), rndst_idx)
    call pbuf_add_field('NACON',      'physpkg',dtype_r8,(/pcols,pver,4/), nacon_idx)
  
+   ! YQIN 10/20/22
+   call pbuf_add_field('CCN02',      'global',dtype_r8,(/pcols,pver/), ccn02_idx)
+
    call nucleate_ice_cam_register()
    call hetfrz_classnuc_cam_register()
 
@@ -420,6 +426,9 @@ subroutine microp_aero_run ( &
    real(r8), pointer :: rndst(:,:,:)    ! radius of 4 dust bins for contact freezing
    real(r8), pointer :: nacon(:,:,:)    ! number in 4 dust bins for contact freezing
 
+   ! YQIN 10/20/22
+   real(r8), pointer :: ccn02(:,:)
+
    real(r8), pointer :: num_coarse(:,:) ! number m.r. of coarse mode
    real(r8), pointer :: coarse_dust(:,:) ! mass m.r. of coarse dust
    real(r8), pointer :: coarse_nacl(:,:) ! mass m.r. of coarse nacl
@@ -478,6 +487,9 @@ subroutine microp_aero_run ( &
 
    real(r8) :: wght
 
+   ! YQIN 10/20/22
+   real(r8) :: ccn02_out(pcols,pver) ! temporary array to save ccn02 out
+
    real(r8), allocatable :: factnum(:,:,:) ! activation fraction for aerosol number
    !-------------------------------------------------------------------------------
 
@@ -514,6 +526,9 @@ subroutine microp_aero_run ( &
    call pbuf_get_field(pbuf, nacon_idx, nacon)
    call pbuf_get_field(pbuf, rndst_idx, rndst)
 
+   ! YQIN 10/20/22
+   call pbuf_get_field(pbuf, ccn02_idx, ccn02)
+
    if (clim_modal_aero) then
 
       itim_old = pbuf_old_tim_idx()
@@ -538,6 +553,9 @@ subroutine microp_aero_run ( &
    npccn(1:ncol,1:pver)    = 0._r8  
 
    nacon(1:ncol,1:pver,:)  = 0._r8
+
+   ! YQIN 10/20/22
+   ccn02(1:ncol,1:pver) = 0._r8
 
    ! set default or fixed dust bins for contact freezing
    rndst(1:ncol,1:pver,1) = rn_dst1
@@ -744,10 +762,14 @@ subroutine microp_aero_run ( &
       call t_startf('dropmixnuc')
       call dropmixnuc( &
          state, ptend, deltatin, pbuf, wsub, &
-         lcldn, lcldo, nctend_mixnuc, factnum)
+         lcldn, lcldo, nctend_mixnuc, factnum, &
+         ccn02_out) ! YQIN 10/20/22
       call t_stopf('dropmixnuc')
 
       npccn(:ncol,:) = nctend_mixnuc(:ncol,:)
+
+      ! YQIN 10/20/22
+      ccn02(:ncol,:) = ccn02_out(:ncol,:)
 
    else
 

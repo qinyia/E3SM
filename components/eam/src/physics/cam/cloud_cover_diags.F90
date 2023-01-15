@@ -47,7 +47,7 @@ end subroutine cloud_cover_diags_init
 
 !===============================================================================
 !===============================================================================
-subroutine cloud_cover_diags_out(lchnk, ncol, cld, pmid, nmxrgn, pmxrgn )
+subroutine cloud_cover_diags_out(lchnk, ncol, cld, pmid, nmxrgn, pmxrgn, cltot, cllow )
 
   integer,  intent(in) :: lchnk, ncol
   real(r8), intent(in) :: cld(pcols,pver)
@@ -55,8 +55,9 @@ subroutine cloud_cover_diags_out(lchnk, ncol, cld, pmid, nmxrgn, pmxrgn )
   integer,  intent(in) :: nmxrgn(pcols)
   real(r8), intent(in) :: pmxrgn(pcols,pverp)
 
-  real(r8) :: cltot(pcols)            ! Diagnostic total cloud cover
-  real(r8) :: cllow(pcols)            !       "     low  cloud cover
+  ! YQIN 12/15/22 add cltot and cllow as output variable 
+  real(r8), intent(out) :: cltot(pcols)            ! Diagnostic total cloud cover
+  real(r8), intent(out) :: cllow(pcols)            !       "     low  cloud cover
   real(r8) :: clmed(pcols)            !       "     mid  cloud cover
   real(r8) :: clhgh(pcols)            !       "     hgh  cloud cover
 
