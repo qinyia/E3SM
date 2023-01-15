@@ -877,7 +877,6 @@ end function radiation_nextsw_cday
   end subroutine radiation_init
 
 !===============================================================================
-  
   subroutine radiation_final()
     ! Do any needed clean-up and deallocation before model exit. Empty for now
     ! but required for consistency with RRTMGPXX interface.
@@ -1065,9 +1064,7 @@ end function radiation_nextsw_cday
     integer :: i, k, iseed, ilchnk                  ! index
     integer :: istat
     integer :: clm_seed (pcols,kiss_seed_num)
-
     real(r8) solin(pcols)         ! Solar incident flux
-
     real(r8) fsntoa(pcols)        ! Net solar flux at TOA
     real(r8) fsutoa(pcols)        ! Upwelling solar flux at TOA
     real(r8) fsntoac(pcols)       ! Clear sky net solar flux at TOA
