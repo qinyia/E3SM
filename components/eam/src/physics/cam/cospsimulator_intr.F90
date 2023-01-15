@@ -41,7 +41,7 @@ module cospsimulator_intr
     use mod_cosp_stats,       only: cosp_change_vertical_grid
 
   ! YQIN 11/23/22
-  use cloud_diagnostics,    only: pdf1d_regime, pdf2d_regime, pdf3d_regime, N_REGIME, regime, N_CAT, cats,&
+  use cdiag_pdf,    only: pdf1d_regime, pdf2d_regime, pdf3d_regime, N_REGIME, regime, N_CAT, cats,&
        ncf_hist_modis     => ncfs, &
        cfC_hist_modis     => mcfs, &
        cfE_hist_modis_1d  => bcfs_1d, &
