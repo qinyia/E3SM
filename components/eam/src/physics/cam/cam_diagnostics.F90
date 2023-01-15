@@ -1275,7 +1275,7 @@ end subroutine diag_conv_tend_ini
     if (single_column) then
        call outfld('OMEGA   ',wfld,    pcols,   lchnk     )
     else
-    call outfld('OMEGA   ',state%omega,    pcols,   lchnk     )
+       call outfld('OMEGA   ',state%omega,    pcols,   lchnk     )
     endif
 
 #if (defined E3SM_SCM_REPLAY )
