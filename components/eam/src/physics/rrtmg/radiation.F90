@@ -33,7 +33,7 @@ use radconstants,     only: rrtmg_sw_cloudsim_band, rrtmg_lw_cloudsim_band, nswb
 
 ! YQIN 12/07/22
   use micro_mg_utils, only: qsmall,mincld
-  use cloud_diagnostics,    only: pdf1d_regime, pdf2d_regime, pdf2dp_regime,pdf3d_regime,&
+  use cdiag_pdf,    only: pdf1d_regime, pdf2d_regime, pdf2dp_regime,pdf3d_regime,&
        ncfs, &
        mcfs, &
        bcfs_1d, &
