@@ -92,7 +92,7 @@ module cdiag_pdf
 
    real(r8), parameter :: limiter = -1.e6_r8
 
-   real(r8), parameter, public :: LTS_threshold = 15 ! K
+   real(r8), parameter, public :: LTS_threshold = 18.5 !15 ! K
    real(r8), parameter, public :: RH750_threshold = 50 ! %
    real(r8), parameter, public :: EIS_threshold = 5 ! K
 
