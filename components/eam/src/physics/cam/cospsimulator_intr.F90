@@ -1030,6 +1030,8 @@ CONTAINS
        call addfld ('CLTMODIS',horiz_only,'A','%','MODIS Total Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clwmodis ( time, loc )
        call addfld ('CLWMODIS',horiz_only,'A','%','MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLWMODISIC',horiz_only,'A','%','In-cloud MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+
        ! float climodis ( time, loc )
        call addfld ('CLIMODIS',horiz_only,'A','%','MODIS Ice Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clhmodis ( time, loc )
@@ -1076,6 +1078,9 @@ CONTAINS
        call addfld ('LWPMODISI_ND',horiz_only,  'A','kg/m2',    'MODIS LWP (same sampling as Nd)',                                   flag_xyfill=.true., fill_value=R_UNDEF)
        call addfld ('CLLWPMODIS',   horiz_only,  'A','Pa',      'MODIS CLOUD Fraction of LWP case',                                  flag_xyfill=.true., fill_value=R_UNDEF)
 
+!PMA
+       call addfld ('AI_CLRSKY',horiz_only,'A','-','Clear-sky Aerosol Index',flag_xyfill=.true., fill_value=R_UNDEF)
+
        ! float lwpmodis ( time, loc )
        call addfld ('LWPMODIS',horiz_only,'A','kg m-2','MODIS Cloud Liquid Water Path*CLWMODIS',                    &
             flag_xyfill=.true., fill_value=R_UNDEF)
@@ -1104,6 +1109,7 @@ CONTAINS
        !! add MODIS output to history file specified by the CAM namelist variable cosp_histfile_num
        call add_default ('CLTMODIS',cosp_histfile_num,' ')
        call add_default ('CLWMODIS',cosp_histfile_num,' ')
+       call add_default ('CLWMODISIC',cosp_histfile_num,' ')
        call add_default ('CLIMODIS',cosp_histfile_num,' ')
        call add_default ('CLHMODIS',cosp_histfile_num,' ')
        call add_default ('CLMMODIS',cosp_histfile_num,' ')
@@ -1126,6 +1132,7 @@ CONTAINS
        call add_default ('LWPMODIS_ND',cosp_histfile_num,' ')
        call add_default ('LWPMODISI_ND',cosp_histfile_num,' ')
        call add_default ('CLLWPMODIS',cosp_histfile_num,' ')
+       call add_default ('AI_CLRSKY', cosp_histfile_num,' ') ! PMA
 
        call add_default ('LWPMODIS',cosp_histfile_num,' ')
        call add_default ('IWPMODIS',cosp_histfile_num,' ')
@@ -1269,7 +1276,7 @@ CONTAINS
   ! ######################################################################################
   ! SUBROUTINE cospsimulator_intr_run
   ! ######################################################################################
-  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,cld_swtau_in,snow_tau_in,snow_emis_in)    
+  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,aerindex_in,cld_swtau_in,snow_tau_in,snow_emis_in) !PMA    
     use physics_types,        only: physics_state
     use physics_buffer,       only: physics_buffer_desc, pbuf_get_field, pbuf_old_tim_idx
     use camsrfexch,           only: cam_in_t
@@ -1295,6 +1302,7 @@ CONTAINS
     type(cam_in_t),      intent(in)         :: cam_in
     real(r8), intent(in) :: emis(pcols,pver)                  ! cloud longwave emissivity
     real(r8), intent(in) :: coszrs(pcols)                     ! cosine solar zenith angle (to tell if day or night)
+    real(r8), intent(in) :: aerindex_in(pcols) ! PMA
     real(r8), intent(in),optional :: cld_swtau_in(pcols,pver) ! RRTM cld_swtau_in, read in using this variable
     real(r8), intent(in),optional :: snow_tau_in(pcols,pver)  ! RRTM grid-box mean SW snow optical depth, used for CAM5 simulations 
     real(r8), intent(in),optional :: snow_emis_in(pcols,pver) ! RRTM grid-box mean LW snow optical depth, used for CAM5 simulations 
@@ -1430,7 +1438,7 @@ CONTAINS
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
 !    integer, parameter :: nf_modis=20                    ! number of modis outputs
-    integer, parameter :: nf_modis=28                    ! number of modis outputs ! YQIN
+    integer, parameter :: nf_modis=29                    ! number of modis outputs ! YQIN
    
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1466,6 +1474,7 @@ CONTAINS
     ! MODIS outputs
     character(len=max_fieldname_len),dimension(nf_modis) :: &
          fname_modis=(/'CLTMODIS    ','CLWMODIS    ','CLIMODIS    ','CLHMODIS    ','CLMMODIS    ',&
+                       'CLWMODISIC  ', &
                        'CLLMODIS    ','TAUTMODIS   ','TAUWMODIS   ','TAUIMODIS   ','TAUTLOGMODIS',&
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ', &
@@ -1619,6 +1628,7 @@ CONTAINS
     real(r8) :: scops_out(pcols,nhtml_cosp*nscol_cosp)   ! CAM frac_out (time,height_mlev,column,profile)
     real(r8) :: cltmodis(pcols)
     real(r8) :: clwmodis(pcols)
+    real(r8) :: clwmodisic(pcols)
     real(r8) :: climodis(pcols)
     real(r8) :: clhmodis(pcols)
     real(r8) :: clmmodis(pcols)
@@ -1642,6 +1652,8 @@ CONTAINS
     real(r8) :: clLWPmodis(pcols)
     real(r8) :: lwpmodis_nd(pcols)
     real(r8) :: lwpmodisi_nd(pcols)
+    !PMA
+    real(r8) :: aerindex(pcols)
 
     real(r8) :: lwpmodis(pcols)
     real(r8) :: iwpmodis(pcols)
@@ -1781,6 +1793,7 @@ CONTAINS
     scops_out(1:pcols,1:nhtml_cosp*nscol_cosp)       = R_UNDEF
     cltmodis(1:pcols)                                = R_UNDEF
     clwmodis(1:pcols)                                = R_UNDEF
+    clwmodisic(1:pcols)                              = R_UNDEF
     climodis(1:pcols)                                = R_UNDEF
     clhmodis(1:pcols)                                = R_UNDEF
     clmmodis(1:pcols)                                = R_UNDEF
@@ -1804,6 +1817,8 @@ CONTAINS
     clLWPmodis(1:pcols)                              = R_UNDEF
     lwpmodis_nd(1:pcols)                             = R_UNDEF
     lwpmodisi_nd(1:pcols)                            = R_UNDEF
+    !PMA
+    aerindex(1:pcols)                                = R_UNDEF
 
     lwpmodis(1:pcols)                                = R_UNDEF
     iwpmodis(1:pcols)                                = R_UNDEF
@@ -2628,6 +2643,15 @@ CONTAINS
     end do
     call t_stopf("output_copying")
 
+    !PMA
+    if (lmodis_sim) then
+    do i=1,ncol
+      if (cltmodis(i).ge.0._r8 .and. cltmodis(i) .lt. 100._r8 ) then
+          aerindex(i) = aerindex_in(i)
+      endif
+    end do
+    endif
+
     ! ######################################################################################
     ! Clean up
     ! ######################################################################################
@@ -2827,6 +2851,9 @@ CONTAINS
        call outfld('CLMMODIS',clmmodis    ,pcols,lchnk)
        call outfld('CLLMODIS',cllmodis    ,pcols,lchnk)
 
+       !PMA
+       call outfld('AI_CLRSKY',aerindex    ,pcols,lchnk)
+
        ! YQIN -- begin
        where ((tctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
           tctmodis(:ncol) = R_UNDEF
@@ -2997,6 +3024,14 @@ CONTAINS
        end where
        call outfld('REFFCLWMODIS',reffclwmodis    ,pcols,lchnk)
        
+       where (reffclwmodis(:ncol) .eq. R_UNDEF) 
+          clwmodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved reffclwmodis
+          clwmodisic(:ncol) = clwmodis(:ncol)
+       end where
+       call outfld('CLWMODISIC',clwmodisic   ,pcols,lchnk)
+
        where ((reffclimodis(:ncol)  .eq. R_UNDEF) .or. (climodis(:ncol) .eq. R_UNDEF))
           reffclimodis(:ncol) = R_UNDEF
        elsewhere

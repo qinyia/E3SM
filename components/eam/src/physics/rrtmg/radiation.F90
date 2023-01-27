@@ -580,6 +580,8 @@ end function radiation_nextsw_cday
                                                        sampling_seq='rad_lwsw', flag_xyfill=.true.)
     call addfld('ICE_ICLD_VISTAU', (/ 'lev' /), 'A',  '1', 'Ice in-cloud extinction visible sw optical depth', &
                                                        sampling_seq='rad_lwsw', flag_xyfill=.true.)
+!PMA
+    call addfld ('AI_ALLSKY', horiz_only,    'A', '', 'All-sky Aerosol Index', flag_xyfill=.true.)
 
     ! get list of active radiation calls
     call rad_cnst_get_call_list(active_calls)
@@ -1367,6 +1369,33 @@ end function radiation_nextsw_cday
                     end if
                   end if
 
+!PMA
+                  if(icall == 0) then ! only for climatology run
+                    aerindex = 0._r8
+                    angstrm = 0.0
+                    aod400 = 0.0
+                    aod700 = 0.0
+                    do i=1, ncol
+                       aod400(i) = sum(aer_tau(i, :, idx_sw_diag+1))
+                       aod700(i) = sum(aer_tau(i, :, idx_sw_diag-1))
+                       if(aod400(i).lt.1.0e4 .and. aod700(i).lt.1.e4  .and. &
+                          aod400(i).gt.1.0e-10 .and. aod700(i).gt.1.0e-10) then
+                          angstrm(i) = (log (aod400(i))-log(aod700(i)))/(log(0.700)-log(0.400))
+                       else
+                          angstrm(i) = fillvalue
+                       end if
+                       if(angstrm(i).ne.fillvalue) then
+                          aerindex(i) = angstrm(i)*sum(aer_tau(i,:,idx_sw_diag))
+                       else
+                          aerindex(i) = fillvalue
+                       end if
+                    end do
+                    do i = 1, nnite
+                       aerindex(idxnite(i)) = fillvalue
+                    end do
+                    call outfld('AI_ALLSKY', aerindex, pcols, lchnk)
+                  endif
+
                   ! Dump shortwave radiation information to history tape buffer (diagnostics)
                   ftem(:ncol,:pver) = qrs(:ncol,:pver)/cpair
                   call outfld('QRS'//diag(icall),ftem  ,pcols,lchnk)
@@ -1582,7 +1611,7 @@ end function radiation_nextsw_cday
              !call should be compatible with camrt radiation.F90 interface too, should be with (in),optional
              ! N.B.: For snow optical properties, the GRID-BOX MEAN shortwave and longwave optical depths are passed.
              call t_startf ('cosp_run')
-             call cospsimulator_intr_run(state,  pbuf, cam_in, emis, coszrs, &
+             call cospsimulator_intr_run(state,  pbuf, cam_in, emis, coszrs,aerindex, &
                   cld_swtau_in=cld_tau(rrtmg_sw_cloudsim_band,:,:),&
                   snow_tau_in=gb_snow_tau,snow_emis_in=gb_snow_lw)
              cosp_cnt(lchnk) = 0  !! reset counter
