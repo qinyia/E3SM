@@ -148,6 +148,8 @@ subroutine phys_register
     use aoa_tracers,        only: aoa_tracers_register
     use aircraft_emit,      only: aircraft_emit_register
     use cam_diagnostics,    only: diag_register
+    ! YQIN 01/14/22
+    use cdiag_pdf,          only: cdiag_pdf_register 
     use cloud_diagnostics,  only: cloud_diagnostics_register
     use cospsimulator_intr, only: cospsimulator_intr_register
     use rad_constituents,   only: rad_cnst_get_info ! Added to query if it is a modal aero sim or not
@@ -295,6 +297,9 @@ subroutine phys_register
 
        !  shallow convection
        call convect_shallow_register
+
+       ! YQIN 01/14/23
+       call cdiag_pdf_register 
 
        ! radiation
        call radiation_register
@@ -698,6 +703,8 @@ subroutine phys_init( phys_state, phys_tend, pbuf2d, cam_out )
     use cam3_aero_data,     only: cam3_aero_data_on, cam3_aero_data_init
     use cam3_ozone_data,    only: cam3_ozone_data_on, cam3_ozone_data_init
     use radheat,            only: radheat_init
+    ! YQIN 01/14/22
+    use cdiag_pdf,          only: cdiag_pdf_init
     use radiation,          only: radiation_init
     use cloud_diagnostics,  only: cloud_diagnostics_init
     use stratiform,         only: stratiform_init
@@ -858,6 +865,9 @@ subroutine phys_init( phys_state, phys_tend, pbuf2d, cam_out )
     endif
 
     call tsinti(tmelt, latvap, rair, stebol, latice)
+
+    ! YQIN 01/14/22
+    call cdiag_pdf_init()
 
     call t_startf ('radiation_init')
     call radiation_init(phys_state)
@@ -2666,7 +2676,10 @@ end if
     !===================================================
 
     call t_startf('bc_history_write')
-    call diag_phys_writeout(state, cam_out%psl)
+    ! YQIN 11/16/22 add cam_in%tref as input variable
+    !call diag_phys_writeout(state, cam_out%psl, cam_in%tref, cam_in%qref)
+    call diag_phys_writeout(state, cam_out%psl, cam_in%tref, cam_in%qref, pbuf)
+
     call diag_conv(state, ztodt, pbuf)
 
     call t_stopf('bc_history_write')
