@@ -51,6 +51,12 @@ module cdiag_pdf
    real(r8), target   , public :: brels(2,nrels)
    real(r8), target   , public :: mrels(nrels)
 
+   ! lnAI
+   integer, parameter , public :: nlnais = 18
+   real(r8)           , public :: blnais_1d(nlnais+1)
+   real(r8), target   , public :: blnais(2,nlnais)
+   real(r8), target   , public :: mlnais(nlnais)
+
    ! lnCCN
    integer, parameter , public :: nlnccns = 30
    real(r8)           , public :: blnccns_1d(nlnccns+1)
@@ -83,6 +89,7 @@ module cdiag_pdf
 
 
    ! YQIN 
+   real(r8), parameter, public :: minai = 0.01_r8
    real(r8), parameter, public :: minccn = 1._r8
    real(r8), parameter, public :: mincdnc = 1._r8
    real(r8), parameter, public :: mincf = 0._r8
@@ -107,6 +114,7 @@ subroutine cdiag_pdf_register
        ! YQIN 10/23/22 add new coordinates 
        call add_hist_coord('hist_rel',      nrels,      'REL for histogram',     'micron',   mrels,     bounds_name='hist_rel_bnds',       bounds=brels)
        call add_hist_coord('hist_cf',       ncfs,       'CF for histogram',      'fraction', mcfs,      bounds_name='hist_cf_bnds',        bounds=bcfs)
+       call add_hist_coord('hist_lnai',     nlnais,     'lnAI for histogram',    '',        mlnais,     bounds_name='hist_lnai_bnds',      bounds=blnais)
        call add_hist_coord('hist_lnccn',    nlnccns,    'lnCCN for histogram',   'cm-3',     mlnccns,   bounds_name='hist_lnccn_bnds',     bounds=blnccns)
        call add_hist_coord('hist_lncdnc',   nlncdncs,   'lnCDNC for histogram',  'cm-3',     mlncdncs,  bounds_name='hist_lncdnc_bnds',    bounds=blncdncs)
        call add_hist_coord('hist_lnticlwp', nlnticlwps, 'lnICLWP for histogram', 'kg/m2',    mlnticlwps,bounds_name='hist_lnticlwp_bnds',  bounds=blnticlwps)
@@ -131,6 +139,8 @@ subroutine cdiag_pdf_init()
            do ireg=1,N_REGIME
                call addfld(       'PDF_CF'//cats(itype)//regime(ireg),       (/'hist_cf'/),      'A', '', 'PDF of CF',        flag_xyfill=.true., fill_value=fillvalue)
                call addfld(      'PDF_REL'//cats(itype)//regime(ireg),       (/'hist_rel'/),     'A', '', 'PDF of REL',       flag_xyfill=.true., fill_value=fillvalue)
+               call addfld(    'PDF_lnAI'//cats(itype)//regime(ireg),        (/'hist_lnai'/),    'A', '', 'PDF of lnAI',      flag_xyfill=.true., fill_value=fillvalue)
+
                call addfld(    'PDF_lnCCN'//cats(itype)//regime(ireg),       (/'hist_lnccn'/),   'A', '', 'PDF of lnCCN',     flag_xyfill=.true., fill_value=fillvalue)
                call addfld(   'PDF_lnCDNC'//cats(itype)//regime(ireg),       (/'hist_lncdnc'/),  'A', '', 'PDF of lnCDNC',    flag_xyfill=.true., fill_value=fillvalue)
                call addfld('PDF_lnCDNC925'//cats(itype)//regime(ireg),       (/'hist_lncdnc'/),  'A', '', 'PDF of lnCDNC925', flag_xyfill=.true., fill_value=fillvalue)
@@ -245,6 +255,26 @@ subroutine cdiag_pdf_init()
              brels(2,k)=brels_1d(k+1)
        end do    
 
+       ! lnAI
+       dbin=log(10._r8)/8._r8
+       blnais_1d(1) = -6._r8
+       blnais_1d(2) = -4.6_r8
+       mlnais(1) = -5._r8
+       mlnais(2) = blnais_1d(2)+dbin/2._r8
+       do k=3, nlnais
+           mlnais(k) = mlnais(k-1) + dbin
+       end do 
+       do k=3,nlnais+1
+             blnais_1d(k) = blnais_1d(k-1) + dbin
+       end do
+       do k=1,nlnais
+             blnais(1,k)=blnais_1d(k)
+             blnais(2,k)=blnais_1d(k+1)
+       end do    
+
+       write(*,*) "dbin=",dbin,"blnais_1d=", blnais_1d
+       write(*,*) "mlnais=", mlnais
+
        ! lnCCN
        dbin=log(10._r8)/8._r8
        blnccns_1d(1) = -10._r8
@@ -261,6 +291,9 @@ subroutine cdiag_pdf_init()
              blnccns(1,k)=blnccns_1d(k)
              blnccns(2,k)=blnccns_1d(k+1)
        end do    
+
+       !write(*,*) "dbin=",dbin,"blnccns_1d=", blnccns_1d
+       !write(*,*) "mlnccns=", mlnccns
 
        ! lnCDNC
        dbin = log(10._r8)/8._r8

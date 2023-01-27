@@ -62,6 +62,10 @@ module cospsimulator_intr
        ccnC_hist_modis    => mlnccns, &
        ccnE_hist_modis_1d => blnccns_1d, &
        ccnE_hist_modis    => blnccns, &
+       nai_hist_modis     => nlnais, &
+       aiC_hist_modis     => mlnais, &
+       aiE_hist_modis_1d  => blnais_1d, &
+       aiE_hist_modis     => blnais, &
        ncod_hist_modis   => ncods, &
        codC_hist_modis   => mcods, &
        codE_hist_modis_1d=> bcods_1d, &
@@ -70,7 +74,7 @@ module cospsimulator_intr
        m3ds, &
        b3ds_1d, &
        b3ds, &
-       minccn, mincdnc, minticlwp, mincf, minrel, mincod,&
+       minccn, mincdnc, minticlwp, mincf, minrel, mincod,minai,&
        LTS_threshold, &
        EIS_threshold, &
        RH750_threshold
@@ -1099,8 +1103,10 @@ CONTAINS
        ! YQIN 11/23/22 add PDF variables 
        do itype=1,N_CAT
        do ireg=1,N_REGIME
-           call addfld (   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'PDF in ND, LWP and CF space', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (   'PDF_AI_CDNCm'//cats(itype)//regime(ireg),    (/'hist_lnai','hist_lncdnc'/), 'A', '1', 'joint histogram of AI and CDNC',    flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'PDF in ND, LWP and CF space',       flag_xyfill=.true., fill_value=R_UNDEF)
 
+           call add_default( 'PDF_AI_CDNCm'//cats(itype)//regime(ireg), 1, ' ')
            call add_default( 'PDF_NDLWPCFm'//cats(itype)//regime(ireg), 1, ' ')
        end do ! itype
        end do ! ireg
@@ -1674,7 +1680,9 @@ CONTAINS
     real(r8) :: reffclwmodis_h(pcols)
     real(r8) :: lwpmodis_h(pcols)
     real(r8) :: cdncmodis_h(pcols)
+    real(r8) :: ai_h(pcols)
 
+    real(r8) :: pdf_ai_cdnc (pcols, N_REGIME, nai_hist_modis, ncdnc_hist_modis)
     real(r8) :: pdf_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
     real(r8) :: pdf_NDLWPCF_out (pcols, n3ds)
 
@@ -2910,6 +2918,12 @@ CONTAINS
                    cdncmodis_h(:ncol) = ndmodisic(:ncol)
                end where 
 
+               where(ndmodisic(:ncol).eq.R_UNDEF .or. aerindex.eq.R_UNDEF)
+                   ai_h(:ncol) = R_UNDEF
+               elsewhere
+                   ai_h(:ncol) = aerindex(:ncol)
+               end where
+
            else
                do i=1,ncol
                    if (iwpmodis(i) > 0._r8) then
@@ -2922,6 +2936,13 @@ CONTAINS
                            lwpmodis_h(i) = 0._r8
                            cdncmodis_h(i) = 0._r8
                        end if 
+
+                       if (ndmodisic(i).eq.R_UNDEF .or. aerindex(i).eq.R_UNDEF) then
+                           ai_h(i) = R_UNDEF
+                       else
+                           ai_h(i) = 0._r8
+                       end if
+
                    else
                        if (clNdmodis(i) .eq. R_UNDEF .or. lwpmodisi_nd(i) .eq. R_UNDEF .or. ndmodisic(i).eq.R_UNDEF) then
                            clwmodis_h(i) = R_UNDEF
@@ -2932,12 +2953,31 @@ CONTAINS
                            lwpmodis_h(i) = lwpmodisi_nd(i)*1.e3_r8 ! kg/m2 -> g/m2
                            cdncmodis_h(i) = ndmodisic(i)
                        end if 
+
+                       if (ndmodisic(i).eq.R_UNDEF .or. aerindex(i).eq.R_UNDEF) then
+                           ai_h(i) = R_UNDEF
+                       else
+                           ai_h(i) = aerindex(i)
+                       end if
+
                    end if
                end do  ! i
            end if
 
            LTSin = EIS
            LTSin_threshold = EIS_threshold
+
+           ! AI vs CDNC 
+           call pdf2d_regime(R_UNDEF,nai_hist_modis,aiE_hist_modis_1d,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME, &
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,minai, mincdnc,&
+                     .true.,.true.,&
+                     ai_h,cdncmodis_h,&  ! aerosol index
+                     pdf_ai_cdnc)
+
+           do ireg = 1, N_REGIME
+               call outfld('PDF_AI_CDNCm'//cats(itype)//regime(ireg),          pdf_ai_cdnc(:,ireg,:,:),    pcols, lchnk)
+           end do 
+
 
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
                        LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
