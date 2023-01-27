@@ -39,6 +39,44 @@ module cospsimulator_intr
        nhydro            => N_HYDRO, &
        cloudsat_preclvl
     use mod_cosp_stats,       only: cosp_change_vertical_grid
+
+  ! YQIN 11/23/22
+  use cdiag_pdf,    only: pdf1d_regime, pdf2d_regime, pdf3d_regime, N_REGIME, regime, N_CAT, cats,&
+       ncf_hist_modis     => ncfs, &
+       cfC_hist_modis     => mcfs, &
+       cfE_hist_modis_1d  => bcfs_1d, &
+       cfE_hist_modis     => bcfs, &
+       nwp_hist_modis     => nlnticlwps, & 
+       wpC_hist_modis     => mlnticlwps, & 
+       wpE_hist_modis_1d  => blnticlwps_1d, &
+       wpE_hist_modis     => blnticlwps, &
+       ncdnc_hist_modis   => nlncdncs, &
+       cdncC_hist_modis   => mlncdncs, &
+       cdncE_hist_modis_1d=> blncdncs_1d, &
+       cdncE_hist_modis   => blncdncs, &
+       nrel_hist_modis    => nrels, &
+       relC_hist_modis    => mrels, &
+       relE_hist_modis_1d => brels_1d, &
+       relE_hist_modis    => brels, &
+       nccn_hist_modis    => nlnccns, &
+       ccnC_hist_modis    => mlnccns, &
+       ccnE_hist_modis_1d => blnccns_1d, &
+       ccnE_hist_modis    => blnccns, &
+       ncod_hist_modis   => ncods, &
+       codC_hist_modis   => mcods, &
+       codE_hist_modis_1d=> bcods_1d, &
+       codE_hist_modis   => bcods, &
+       n3ds, &
+       m3ds, &
+       b3ds_1d, &
+       b3ds, &
+       minccn, mincdnc, minticlwp, mincf, minrel, mincod,&
+       LTS_threshold, &
+       EIS_threshold, &
+       RH750_threshold
+
+  use cam_history_support, only: fillvalue
+
 #endif
   implicit none
   private
@@ -223,7 +261,10 @@ module cospsimulator_intr
   integer :: shcldliq_idx, shcldice_idx, shcldliq1_idx, shcldice1_idx, dpflxprc_idx
   integer :: dpflxsnw_idx, shflxprc_idx, shflxsnw_idx, lsflxprc_idx, lsflxsnw_idx
   integer :: rei_idx, rel_idx
-  
+
+  ! YQIN 11/23/22
+  integer :: lts_idx, rh750_idx, eis_idx
+ 
   ! ######################################################################################
   ! Declarations specific to COSP2
   ! ######################################################################################
@@ -562,7 +603,9 @@ CONTAINS
        lmisr_sim = .true.
        lmodis_sim = .true.
        cosp_ncolumns = 10
-       cosp_nradsteps = 3
+       ! YQIN 12/01/22
+!       cosp_nradsteps = 3
+       cosp_nradsteps = 1
     end if
     
     !! reset COSP namelist variables based on input from cam namelist variables
@@ -688,6 +731,9 @@ CONTAINS
     
     integer :: ncid,latid,lonid,did,hrid,minid,secid, istat
     integer :: i
+
+    ! YQIN 
+    integer :: ireg, itype
     
     ! ISCCP OUTPUTS
     if (lisccp_sim) then
@@ -1045,6 +1091,16 @@ CONTAINS
        call addfld ('CLRLMODIS',(/'cosp_tau_modis','cosp_reffliq  '/),'A','%','MODIS Cloud Area Fraction',            &
             flag_xyfill=.true., fill_value=R_UNDEF)
        
+       ! YQIN 11/23/22 add PDF variables 
+       do itype=1,N_CAT
+       do ireg=1,N_REGIME
+           call addfld (   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'PDF in ND, LWP and CF space', flag_xyfill=.true., fill_value=R_UNDEF)
+
+           call add_default( 'PDF_NDLWPCFm'//cats(itype)//regime(ireg), 1, ' ')
+       end do ! itype
+       end do ! ireg
+
+
        !! add MODIS output to history file specified by the CAM namelist variable cosp_histfile_num
        call add_default ('CLTMODIS',cosp_histfile_num,' ')
        call add_default ('CLWMODIS',cosp_histfile_num,' ')
@@ -1196,6 +1252,11 @@ CONTAINS
     shflxsnw_idx   = pbuf_get_index('SH_FLXSNW')
     lsflxprc_idx   = pbuf_get_index('LS_FLXPRC')
     lsflxsnw_idx   = pbuf_get_index('LS_FLXSNW')
+
+    ! YQIN 11/23/22
+    lts_idx        = pbuf_get_index('LTS')
+    eis_idx        = pbuf_get_index('EIS')
+    rh750_idx      = pbuf_get_index('RH750')
     
     allocate(first_run_cosp(begchunk:endchunk))
     first_run_cosp(begchunk:endchunk)=.true.
@@ -1457,6 +1518,13 @@ CONTAINS
     real(r8), pointer, dimension(:,:) :: dp_cldliq       ! deep gbm cloud liquid water (kg/kg)
     real(r8), pointer, dimension(:,:) :: dp_cldice       ! deep gmb cloud ice water (kg/kg)
     
+    ! YQIN 11/23/22
+    real(r8), pointer :: LTS(:)
+    real(r8), pointer :: EIS(:)
+    real(r8), pointer :: RH750(:)
+
+    real(r8) :: LTSin(pcols), LTSin_threshold
+ 
     ! Output CAM variables
     ! Notes:
     ! 1) use pcols (maximum number of columns that code could use, maybe 16)
@@ -1588,6 +1656,19 @@ CONTAINS
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
          cal_betatot_liq,cal_tautot,cal_tautot_ice,cal_tautot_liq,cs_gvol_out,cs_krvol_out,cs_zvol_out,&
          asym34_out,ssa34_out
+
+    ! YQIN 11/23/22
+    real(r8) :: clwmodis_h(pcols)
+    real(r8) :: reffclwmodis_h(pcols)
+    real(r8) :: lwpmodis_h(pcols)
+    real(r8) :: cdncmodis_h(pcols)
+
+    real(r8) :: pdf_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
+    real(r8) :: pdf_NDLWPCF_out (pcols, n3ds)
+
+    integer :: j, l, lkj
+    integer :: ireg, itype
+
 
     type(interp_type)  :: interp_wgts
     integer, parameter :: extrap_method = 1              ! sets extrapolation method to boundary value (1)
@@ -1865,6 +1946,11 @@ CONTAINS
     call pbuf_get_field(pbuf, lsflxprc_idx, ls_flxprc  )
     call pbuf_get_field(pbuf, lsflxsnw_idx, ls_flxsnw  )
    
+    ! YQIN 11/23/22
+    call pbuf_get_field(pbuf, lts_idx,      LTS)
+    call pbuf_get_field(pbuf, eis_idx,      EIS)
+    call pbuf_get_field(pbuf, rh750_idx,    RH750)
+
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ! CALCULATE COSP INPUT VARIABLES FROM CAM VARIABLES, done for all columns within chunk
     !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2740,6 +2826,118 @@ CONTAINS
        call outfld('CLHMODIS',clhmodis    ,pcols,lchnk)
        call outfld('CLMMODIS',clmmodis    ,pcols,lchnk)
        call outfld('CLLMODIS',cllmodis    ,pcols,lchnk)
+
+       ! YQIN -- begin
+       where ((tctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
+          tctmodis(:ncol) = R_UNDEF
+          tctmodisic(:ncol) = R_UNDEF
+       elsewhere
+          tctmodisic(:ncol) = tctmodis(:ncol)
+          !! weight by the cloud fraction cltmodis
+          tctmodis(:ncol) = tctmodis(:ncol)*cltmodis(:ncol)
+       end where
+
+       call outfld('TCTMODISIC',tctmodisic ,pcols,lchnk)
+       call outfld('TCTMODIS',  tctmodis   ,pcols,lchnk)
+
+       where ((ndmodis(:ncol)  .eq. R_UNDEF) .or. ( clNdmodis(:ncol) .eq. R_UNDEF))
+          ndmodis(:ncol) = R_UNDEF
+          ndmodisic(:ncol) = R_UNDEF
+       elsewhere
+          ndmodisic(:ncol) = ndmodis(:ncol)
+          !! weight by the cloud fraction cltmodis
+          ndmodis(:ncol) = ndmodis(:ncol)*clNdmodis(:ncol)
+       end where
+
+       call outfld('NDMODISIC',ndmodisic    ,pcols,lchnk)
+       call outfld('NDMODIS'  ,ndmodis      ,pcols,lchnk)
+       call outfld('CLNDMODIS',clNdmodis    ,pcols,lchnk)
+
+       where ((lwpmodis_nd(:ncol)  .eq. R_UNDEF) .or. ( clLWPmodis(:ncol) .eq. R_UNDEF))
+          lwpmodisi_nd(:ncol) = R_UNDEF
+          lwpmodis_nd(:ncol) = R_UNDEF
+       elsewhere
+          lwpmodisi_nd(:ncol) = lwpmodis_nd(:ncol)
+          !! weight by the cloud fraction cltmodis
+          lwpmodis_nd(:ncol) = lwpmodis_nd(:ncol)*clLWPmodis(:ncol)
+       end where
+       call outfld('LWPMODISI_ND' ,lwpmodisi_nd   ,pcols,lchnk)
+       call outfld('LWPMODIS_ND'  ,lwpmodis_nd   ,pcols,lchnk)
+       call outfld('CLLWPMODIS'   ,clLWPmodis    ,pcols,lchnk)
+       ! YQIN -- end 
+
+       ! YQIN 11/23/22
+       clwmodis_h = R_UNDEF
+       lwpmodis_h = R_UNDEF
+       cdncmodis_h = R_UNDEF
+
+       do itype=1,N_CAT
+           if (itype.eq.1) then
+               where (clNdmodis(:ncol) .eq. R_UNDEF .or. lwpmodisi_nd(:ncol) .eq. R_UNDEF .or. ndmodisic(:ncol).eq.R_UNDEF)  
+                   clwmodis_h(:ncol) = R_UNDEF
+                   lwpmodis_h(:ncol) = R_UNDEF
+                   cdncmodis_h(:ncol) = R_UNDEF
+               elsewhere 
+                   clwmodis_h(:ncol) = clNdmodis(:ncol)
+                   lwpmodis_h(:ncol) = lwpmodisi_nd(:ncol)*1.e3_r8! kg/m2 -> g/m2
+                   cdncmodis_h(:ncol) = ndmodisic(:ncol)
+               end where 
+
+           else
+               do i=1,ncol
+                   if (iwpmodis(i) > 0._r8) then
+                       if (clNdmodis(i) .eq. R_UNDEF .or. lwpmodisi_nd(i) .eq. R_UNDEF .or. ndmodisic(i).eq.R_UNDEF) then
+                           clwmodis_h(i) = R_UNDEF
+                           lwpmodis_h(i) = R_UNDEF
+                           cdncmodis_h(i) = R_UNDEF
+                       else
+                           clwmodis_h(i) = 0._r8
+                           lwpmodis_h(i) = 0._r8
+                           cdncmodis_h(i) = 0._r8
+                       end if 
+                   else
+                       if (clNdmodis(i) .eq. R_UNDEF .or. lwpmodisi_nd(i) .eq. R_UNDEF .or. ndmodisic(i).eq.R_UNDEF) then
+                           clwmodis_h(i) = R_UNDEF
+                           lwpmodis_h(i) = R_UNDEF
+                           cdncmodis_h(i) = R_UNDEF
+                       else
+                           clwmodis_h(i) = clNdmodis(i)
+                           lwpmodis_h(i) = lwpmodisi_nd(i)*1.e3_r8 ! kg/m2 -> g/m2
+                           cdncmodis_h(i) = ndmodisic(i)
+                       end if 
+                   end if
+               end do  ! i
+           end if
+
+           LTSin = EIS
+           LTSin_threshold = EIS_threshold
+
+           call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
+                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       .true.,.true.,.false.,&
+                       cdncmodis_h,lwpmodis_h,clwmodis_h,&
+                       pdf_NDLWPCF &
+           )
+
+           pdf_NDLWPCF_out = 0._r8
+           do ireg = 1,N_REGIME
+               do i = 1,ncol
+                   do l = 1,ncf_hist_modis
+                   do k = 1,nwp_hist_modis
+                   do j = 1,ncdnc_hist_modis
+                       lkj = (l-1)*nwp_hist_modis*ncdnc_hist_modis+(k-1)*ncdnc_hist_modis+j
+                   
+                       pdf_NDLWPCF_out(i,lkj) = pdf_NDLWPCF(i,ireg,j,k,l)
+                   end do ! j
+                   end do ! k
+                   end do ! l
+               end do ! i
+    
+               call outfld(   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),           pdf_NDLWPCF_out, pcols, lchnk)
+           end do ! ireg
+       end do ! itype 
+       ! =============================================================================================================
+ 
        
        !! where there is no cloud fraction or no retrieval, set to R_UNDEF, 
        !! otherwise weight retrieval by cloud fraction
@@ -2815,45 +3013,6 @@ CONTAINS
        end where
        call outfld('PCTMODIS',pctmodis    ,pcols,lchnk)
        
-       ! YQIN 
-       where ((tctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
-          tctmodis(:ncol) = R_UNDEF
-          tctmodisic(:ncol) = R_UNDEF
-       elsewhere
-          tctmodisic(:ncol) = tctmodis(:ncol)
-          !! weight by the cloud fraction cltmodis
-          tctmodis(:ncol) = tctmodis(:ncol)*cltmodis(:ncol)
-       end where
-
-       call outfld('TCTMODISIC',tctmodisic ,pcols,lchnk)
-       call outfld('TCTMODIS',  tctmodis   ,pcols,lchnk)
-
-       ! YQIN 
-       where ((ndmodis(:ncol)  .eq. R_UNDEF) .or. ( clNdmodis(:ncol) .eq. R_UNDEF))
-          ndmodis(:ncol) = R_UNDEF
-          ndmodisic(:ncol) = R_UNDEF
-       elsewhere
-          ndmodisic(:ncol) = ndmodis(:ncol)
-          !! weight by the cloud fraction cltmodis
-          ndmodis(:ncol) = ndmodis(:ncol)*clNdmodis(:ncol)
-       end where
-
-       call outfld('NDMODISIC',ndmodisic    ,pcols,lchnk)
-       call outfld('NDMODIS'  ,ndmodis      ,pcols,lchnk)
-       call outfld('CLNDMODIS',clNdmodis    ,pcols,lchnk)
-
-       where ((lwpmodis_nd(:ncol)  .eq. R_UNDEF) .or. ( clLWPmodis(:ncol) .eq. R_UNDEF))
-          lwpmodisi_nd(:ncol) = R_UNDEF
-          lwpmodis_nd(:ncol) = R_UNDEF
-       elsewhere
-          lwpmodisi_nd(:ncol) = lwpmodis_nd(:ncol)
-          !! weight by the cloud fraction cltmodis
-          lwpmodis_nd(:ncol) = lwpmodis_nd(:ncol)*clLWPmodis(:ncol)
-       end where
-       call outfld('LWPMODISI_ND' ,lwpmodisi_nd   ,pcols,lchnk)
-       call outfld('LWPMODIS_ND'  ,lwpmodis_nd   ,pcols,lchnk)
-       call outfld('CLLWPMODIS'   ,clLWPmodis    ,pcols,lchnk)
-
 
        where ((lwpmodis(:ncol)  .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
           lwpmodis(:ncol) = R_UNDEF
