@@ -88,6 +88,8 @@ integer  ::      t_ttend_idx = 0
 
 ! YQIN 12/17/22
 integer ::      eis_idx = 0
+integer ::      lts_idx = 0
+integer ::      rh750_idx = 0 
 
 integer  ::      prec_dp_idx  = 0
 integer  ::      snow_dp_idx  = 0
@@ -114,7 +116,9 @@ subroutine diag_register
    call pbuf_add_field('T_TTEND', 'global', dtype_r8, (/pcols,pver,dyn_time_lvls/), t_ttend_idx)
 
    ! YQIN 12/17/22
-   call pbuf_add_field('EIS', 'global', dtype_r8, (/pcols/), eis_idx)
+   call pbuf_add_field('EIS',  'global', dtype_r8, (/pcols/), eis_idx)
+   call pbuf_add_field('LTS',  'global', dtype_r8, (/pcols/), lts_idx)
+   call pbuf_add_field('RH750','global', dtype_r8, (/pcols/), rh750_idx)
 
 end subroutine diag_register
 
@@ -1037,6 +1041,8 @@ end subroutine diag_conv_tend_ini
     real(r8) :: rh_ref(pcols) ! RH at the reference height 
 
     real(r8), pointer, dimension(:) :: EIS_out
+    real(r8), pointer, dimension(:) :: LTS_out
+    real(r8), pointer, dimension(:) :: RH750
 
     real(r8) tem2n(pcols)    ! temporary workspace
     real(r8) ftemn(pcols)    ! temporary workspace
@@ -1978,16 +1984,24 @@ end subroutine diag_conv_tend_ini
   rh_ref(:ncol) = qref(:ncol)/ftemn(:ncol)
 
   call pbuf_get_field(pbuf, eis_idx, EIS_out)
+  call pbuf_get_field(pbuf, lts_idx, LTS_out)
+  call pbuf_get_field(pbuf, rh750_idx, RH750)
 
   call calc_EIS(ncol, pcols, tref, rh_ref, SLP, T700, Z700, LTS, EIS, EIS_fxRH)
 
   EIS_out(:ncol) = EIS(:ncol)
-
+  LTS_out(:ncol) = LTS(:ncol)
 
   call outfld('LTS', LTS, pcols, lchnk)
   call outfld('EIS', EIS, pcols, lchnk)
   call outfld('EIS_fxRH', EIS_fxRH, pcols, lchnk)
 
+  ! calculate RH750
+  call qsat(state%t(:ncol,:), state%pmid(:ncol,:), &
+       tem2(:ncol,:), ftem(:ncol,:)) 
+  ftem(:ncol,:) = state%q(:ncol,:,1)/ftem(:ncol,:)*100._r8
+
+  call vertinterp(ncol, pcols, pver, state%pmid, 75000._r8, ftem, RH750)
 
   !---------------------------------------------------------
   ! WACCM tidal diagnostics 
