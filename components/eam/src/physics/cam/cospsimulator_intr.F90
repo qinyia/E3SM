@@ -1018,13 +1018,17 @@ CONTAINS
             flag_xyfill=.true., fill_value=R_UNDEF)
        ! float pctmodis ( time, loc )
        call addfld ('PCTMODIS',horiz_only,'A','Pa','MODIS Cloud Top Pressure*CLTMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
+
        ! YQIN
        ! float tctmodis ( time, loc )
-       call addfld ('TCTMODIS',horiz_only,'A','Pa','MODIS Cloud Top Temperature*CLTMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
-       call addfld ('NDMODIS',horiz_only,'A','Pa','MODIS Cloud Top ND*CLNDMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
-       call addfld ('CLNDMODIS',horiz_only,'A','Pa','MODIS CLOUD Fraction of Nd case',flag_xyfill=.true., fill_value=R_UNDEF)
-       call addfld ('TCTMODISIC',horiz_only,'A','Pa','MODIS Cloud Top Temperature',flag_xyfill=.true., fill_value=R_UNDEF)
-       call addfld ('NDMODISIC',horiz_only,'A','Pa','MODIS Cloud Top ND',flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('TCTMODIS',     horiz_only,  'A','Pa',      'MODIS Cloud Top Temperature*CLTMODIS',                              flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('NDMODIS',      horiz_only,  'A','Pa',      'MODIS Cloud Top cloud droplet number concentration (Nd)*CLNDMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLNDMODIS',    horiz_only,  'A','fraction','MODIS CLOUD Fraction of Nd case',                                   flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('TCTMODISIC',   horiz_only,  'A','K',       'MODIS Cloud Top Temperature',                                       flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('NDMODISIC',    horiz_only,  'A','cm-3',    'MODIS Cloud Top cloud droplet number concentration',                flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODIS_ND',  horiz_only,  'A','kg/m2',   'MODIS LWP*CLLWPMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODISI_ND',horiz_only,  'A','kg/m2',    'MODIS LWP (same sampling as Nd)',                                   flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLLWPMODIS',   horiz_only,  'A','Pa',      'MODIS CLOUD Fraction of LWP case',                                  flag_xyfill=.true., fill_value=R_UNDEF)
 
        ! float lwpmodis ( time, loc )
        call addfld ('LWPMODIS',horiz_only,'A','kg m-2','MODIS Cloud Liquid Water Path*CLWMODIS',                    &
@@ -1063,6 +1067,9 @@ CONTAINS
        call add_default ('CLNDMODIS',cosp_histfile_num,' ')
        call add_default ('TCTMODISIC',cosp_histfile_num,' ')
        call add_default ('NDMODISIC',cosp_histfile_num,' ')
+       call add_default ('LWPMODIS_ND',cosp_histfile_num,' ')
+       call add_default ('LWPMODISI_ND',cosp_histfile_num,' ')
+       call add_default ('CLLWPMODIS',cosp_histfile_num,' ')
 
        call add_default ('LWPMODIS',cosp_histfile_num,' ')
        call add_default ('IWPMODIS',cosp_histfile_num,' ')
@@ -1362,7 +1369,7 @@ CONTAINS
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
 !    integer, parameter :: nf_modis=20                    ! number of modis outputs
-    integer, parameter :: nf_modis=25                    ! number of modis outputs ! YQIN
+    integer, parameter :: nf_modis=28                    ! number of modis outputs ! YQIN
    
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1402,6 +1409,7 @@ CONTAINS
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ', &
                        'TCTMODIS    ','NDMODIS     ','CLNDMODIS   ','TCTMODISIC  ','NDMODISIC   ',& ! YQIN
+                       'LWPMODIS_ND ','CLLWPMODIS  ','LWPMODISI_ND', & ! YQIN 
                        'LWPMODIS    ','IWPMODIS    ','CLMODIS     ','CLRIMODIS   ',&
                        'CLRLMODIS   '/)
     
@@ -1563,6 +1571,9 @@ CONTAINS
     real(r8) :: ndmodis(pcols)
     real(r8) :: tctmodisic(pcols)
     real(r8) :: ndmodisic(pcols)
+    real(r8) :: clLWPmodis(pcols)
+    real(r8) :: lwpmodis_nd(pcols)
+    real(r8) :: lwpmodisi_nd(pcols)
 
     real(r8) :: lwpmodis(pcols)
     real(r8) :: iwpmodis(pcols)
@@ -1709,6 +1720,9 @@ CONTAINS
     ndmodis(1:pcols)                                 = R_UNDEF
     tctmodisic(1:pcols)                              = R_UNDEF
     ndmodisic(1:pcols)                               = R_UNDEF
+    clLWPmodis(1:pcols)                              = R_UNDEF
+    lwpmodis_nd(1:pcols)                             = R_UNDEF
+    lwpmodisi_nd(1:pcols)                            = R_UNDEF
 
     lwpmodis(1:pcols)                                = R_UNDEF
     iwpmodis(1:pcols)                                = R_UNDEF
@@ -2261,6 +2275,8 @@ CONTAINS
              cospOUT%modis_Cloud_Fraction_Water_Mean(1:ncol)       = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Ice_Mean(1:ncol)         = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Nd_Mean(1:ncol)          = R_UNDEF ! YQIN
+             cospOUT%modis_Cloud_Fraction_LWP_Mean(1:ncol)         = R_UNDEF ! YQIN
+
              cospOUT%modis_Cloud_Fraction_High_Mean(1:ncol)        = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Mid_Mean(1:ncol)         = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Low_Mean(1:ncol)         = R_UNDEF
@@ -2276,6 +2292,7 @@ CONTAINS
              ! YQIN 
              cospOUT%modis_Cloud_Top_Temperature_Total_Mean(1:ncol)   = R_UNDEF
              cospOUT%modis_Cloud_Top_Nd_Total_Mean(1:ncol)   = R_UNDEF
+             cospOUT%modis_Cloud_Top_LWP_Total_Mean(1:ncol)  = R_UNDEF
 
              cospOUT%modis_Liquid_Water_Path_Mean(1:ncol)          = R_UNDEF
              cospOUT%modis_Ice_Water_Path_Mean(1:ncol)             = R_UNDEF
@@ -2416,6 +2433,8 @@ CONTAINS
        clwmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Water_Mean
        climodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Ice_Mean
        clNdmodis(1:ncol)    = cospOUT%modis_Cloud_Fraction_Nd_Mean ! YQIN
+       clLWPmodis(1:ncol)   = cospOUT%modis_Cloud_Fraction_LWP_Mean ! YQIN
+
        clhmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_High_Mean
        clmmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Mid_Mean
        cllmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Low_Mean
@@ -2432,6 +2451,7 @@ CONTAINS
        ! YQIN 
        tctmodis(1:ncol)     = cospOUT%modis_Cloud_Top_Temperature_Total_Mean
        ndmodis(1:ncol)      = cospOUT%modis_Cloud_Top_Nd_Total_Mean
+       lwpmodis_nd(1:ncol)  = cospOUT%modis_Cloud_Top_LWP_Total_Mean
 
        lwpmodis(1:ncol)     = cospOUT%modis_Liquid_Water_Path_Mean
        iwpmodis(1:ncol)     = cospOUT%modis_Ice_Water_Path_Mean
@@ -2821,6 +2841,18 @@ CONTAINS
        call outfld('NDMODISIC',ndmodisic    ,pcols,lchnk)
        call outfld('NDMODIS'  ,ndmodis      ,pcols,lchnk)
        call outfld('CLNDMODIS',clNdmodis    ,pcols,lchnk)
+
+       where ((lwpmodis_nd(:ncol)  .eq. R_UNDEF) .or. ( clLWPmodis(:ncol) .eq. R_UNDEF))
+          lwpmodisi_nd(:ncol) = R_UNDEF
+          lwpmodis_nd(:ncol) = R_UNDEF
+       elsewhere
+          lwpmodisi_nd(:ncol) = lwpmodis_nd(:ncol)
+          !! weight by the cloud fraction cltmodis
+          lwpmodis_nd(:ncol) = lwpmodis_nd(:ncol)*clLWPmodis(:ncol)
+       end where
+       call outfld('LWPMODISI_ND' ,lwpmodisi_nd   ,pcols,lchnk)
+       call outfld('LWPMODIS_ND'  ,lwpmodis_nd   ,pcols,lchnk)
+       call outfld('CLLWPMODIS'   ,clLWPmodis    ,pcols,lchnk)
 
 
        where ((lwpmodis(:ncol)  .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
@@ -3458,6 +3490,7 @@ CONTAINS
        allocate(x%modis_Cloud_Fraction_Water_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Ice_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Nd_Mean(Npoints)) ! YQIN
+       allocate(x%modis_Cloud_Fraction_LWP_Mean(Npoints)) ! YQIN
 
        allocate(x%modis_Cloud_Fraction_High_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Mid_Mean(Npoints))
@@ -3474,6 +3507,7 @@ CONTAINS
        ! YQIN 
        allocate(x%modis_Cloud_Top_Temperature_Total_Mean(Npoints))
        allocate(x%modis_Cloud_Top_Nd_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_LWP_Total_Mean(Npoints))
 
        allocate(x%modis_Liquid_Water_Path_Mean(Npoints))
        allocate(x%modis_Ice_Water_Path_Mean(Npoints))
@@ -3742,6 +3776,10 @@ CONTAINS
         deallocate(y%modis_Cloud_Fraction_Nd_Mean)     
         nullify(y%modis_Cloud_Fraction_Nd_Mean)     
      endif
+     if (associated(y%modis_Cloud_Fraction_LWP_Mean))                        then
+        deallocate(y%modis_Cloud_Fraction_LWP_Mean)     
+        nullify(y%modis_Cloud_Fraction_LWP_Mean)     
+     endif
 
      if (associated(y%modis_Cloud_Fraction_Water_Mean))                      then
         deallocate(y%modis_Cloud_Fraction_Water_Mean)           
@@ -3805,6 +3843,10 @@ CONTAINS
      if (associated(y%modis_Cloud_Top_Nd_Total_Mean))                  then
         deallocate(y%modis_Cloud_Top_Nd_Total_Mean)           
         nullify(y%modis_Cloud_Top_Nd_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_LWP_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_LWP_Total_Mean)           
+        nullify(y%modis_Cloud_Top_LWP_Total_Mean)           
      endif
 
      if (associated(y%modis_Liquid_Water_Path_Mean))                         then
