@@ -86,6 +86,9 @@ integer  ::      kvh_idx    = 0
 integer  ::      cush_idx   = 0 
 integer  ::      t_ttend_idx = 0
 
+! YQIN 12/17/22
+integer ::      eis_idx = 0
+
 integer  ::      prec_dp_idx  = 0
 integer  ::      snow_dp_idx  = 0
 integer  ::      prec_sh_idx  = 0
@@ -109,6 +112,9 @@ subroutine diag_register
     
    ! Request physics buffer space for fields that persist across timesteps.
    call pbuf_add_field('T_TTEND', 'global', dtype_r8, (/pcols,pver,dyn_time_lvls/), t_ttend_idx)
+
+   ! YQIN 12/17/22
+   call pbuf_add_field('EIS', 'global', dtype_r8, (/pcols/), eis_idx)
 
 end subroutine diag_register
 
@@ -425,6 +431,12 @@ subroutine diag_init()
    call addfld ('U90M',horiz_only,    'A','m/s','Zonal wind at turbine hub height (90m above surface)')
    call addfld ('V90M',horiz_only,    'A','m/s','Meridional wind at turbine hub height (90m above surface)')
 
+   ! YQIN 11/16/22 
+   call addfld ('LTS', horiz_only,   'A', 'K', 'Lower Tropspheric Stability')
+   call addfld ('EIS', horiz_only,   'A', 'K', 'Estimated Inversion Strength')
+   call addfld ('EIS_fxRH', horiz_only,   'A', 'K', 'Estimated Inversion Strength with surface RH = 80%')
+
+
    ! This field is added by radiation when full physics is used
    if ( ideal_phys )then
       call addfld('QRS', (/ 'lev' /), 'A', 'K/s', 'Solar heating rate')
@@ -453,6 +465,11 @@ subroutine diag_init()
       call add_default ('VU      ', 1, ' ')
       call add_default ('VV      ', 1, ' ')
       call add_default ('VQ      ', 1, ' ')
+
+      ! YQIN 11/16/22 
+      call add_default ('LTS     ', 1, ' ')
+      call add_default ('EIS     ', 1, ' ')
+      call add_default ('EIS_fxRH', 1, ' ')
 
       if(prog_modal_aero .and. history_verbose) then !Only for prognostic aerosols
          call add_default ('Vbc_a1  ', 1, ' ')
@@ -958,7 +975,10 @@ subroutine diag_conv_tend_ini(state,pbuf)
 end subroutine diag_conv_tend_ini
 !===============================================================================
 
-  subroutine diag_phys_writeout(state, psl)
+  ! YQIN 11/16/22 
+  !subroutine diag_phys_writeout(state, psl)
+  subroutine diag_phys_writeout(state, psl, tref, qref, pbuf)
+
 
 !----------------------------------------------------------------------- 
 ! 
@@ -979,6 +999,13 @@ end subroutine diag_conv_tend_ini
 !
    type(physics_state), intent(inout) :: state
    real(r8), optional , intent(out)   :: psl(pcols) 
+
+   ! YQIN 11/16/22 
+   real(r8), optional , intent(in) :: tref(pcols)
+   real(r8), optional , intent(in) :: qref(pcols)
+
+   type(physics_buffer_desc), optional, pointer :: pbuf(:)
+
 !
 !---------------------------Local workspace-----------------------------
 !
@@ -1002,7 +1029,19 @@ end subroutine diag_conv_tend_ini
     integer  plon             ! number of longitudes
 
     integer i, k, m, lchnk, ncol, nstep
-!
+
+    ! YQIN 11/16/22
+    real(r8) :: TS(pcols), SLP(pcols), T700(pcols), Z700(pcols) 
+    real(r8) :: LTS(pcols), EIS(pcols)
+    real(r8) :: EIS_fxRH(pcols)
+    real(r8) :: rh_ref(pcols) ! RH at the reference height 
+
+    real(r8), pointer, dimension(:) :: EIS_out
+
+    real(r8) tem2n(pcols)    ! temporary workspace
+    real(r8) ftemn(pcols)    ! temporary workspace
+
+
 !-----------------------------------------------------------------------
 !
     lchnk = state%lchnk
@@ -1929,6 +1968,26 @@ end subroutine diag_conv_tend_ini
     end if
     call outfld ('UTOP    ', state%u(:,1)  ,  pcols, lchnk)
 
+  ! YQIN 11/16/22 EIS diagnostics
+  call cpslec (ncol, state%pmid, state%phis, state%ps, state%t,SLP, gravit, rair) 
+  call vertinterp(ncol, pcols, pver, state%pmid, 70000._r8, state%t, T700)
+  call vertinterp(ncol, pcols, pver, state%pmid, 70000._r8, z3, Z700)
+
+  ! Calculate and output reference height RH (RHREFHT)
+  call qsat(tref(:ncol), state%ps(:ncol), tem2n(:ncol), ftemn(:ncol))
+  rh_ref(:ncol) = qref(:ncol)/ftemn(:ncol)
+
+  call pbuf_get_field(pbuf, eis_idx, EIS_out)
+
+  call calc_EIS(ncol, pcols, tref, rh_ref, SLP, T700, Z700, LTS, EIS, EIS_fxRH)
+
+  EIS_out(:ncol) = EIS(:ncol)
+
+
+  call outfld('LTS', LTS, pcols, lchnk)
+  call outfld('EIS', EIS, pcols, lchnk)
+  call outfld('EIS_fxRH', EIS_fxRH, pcols, lchnk)
+
 
   !---------------------------------------------------------
   ! WACCM tidal diagnostics 
@@ -2469,5 +2528,69 @@ end subroutine diag_phys_tend_writeout
    if ( cnst_cam_outfld(ixcldice) ) call outfld (bpcnst(ixcldice), state%q(1,1,ixcldice), pcols, lchnk)
 
    end subroutine diag_state_b4_phys_write
+
+! ########################################
+! YQIN 11/16/22
+subroutine calc_EIS(ncol, ncold, TS, rh_ref, SLP, T700, z700, LTS, EIS, EIS_fxRH)
+
+integer , intent(in) :: ncol
+integer , intent(in) :: ncold
+real(r8), intent(in) :: TS(ncold)   ! surface temperature (K)
+real(r8), intent(in) :: rh_ref(ncold) ! RH at the reference height (%)
+real(r8), intent(in) :: SLP(ncold)  ! sea level pressure (Pa)
+real(r8), intent(in) :: T700(ncold) ! temperature at 700 hPa (K)
+real(r8), intent(in) :: z700(ncold) ! height at 700 hPa (m)
+
+real(r8), intent(out) :: LTS(ncold) ! Lower tropspheric stability (LTS)
+real(r8), intent(out) :: EIS(ncold) ! estimated inversion strength (EIS)
+real(r8), intent(out) :: EIS_fxRH(ncold) ! estimated inversion strength (EIS)
+
+
+real(r8) :: es
+real(r8) :: e, Td, p_LCL, T_LCL, LCL
+real(r8) :: e_fxRH, Td_fxRH, p_LCL_fxRH, T_LCL_fxRH, LCL_fxRH
+real(r8) :: theta700, theta_slp
+real(r8) :: T_bar, es_bar, qs_bar, gamma_m
+
+integer :: i
+
+do i=1,ncol
+    !calculate the LCL height
+    es=6.11_r8*exp(((2.5_r8*10._r8**6)/461._r8)*((1._r8/273.15_r8)-(1._r8/TS(i))))  !Clausius-Clapeyron Equation (Equation 4.23 from Curry and Webster)
+
+    ! used varied RH 
+    e=es*rh_ref(i)  ! use calculated RH at the reference height
+    Td=((1/273.15_r8)-(461._r8/(2.5_r8*10._r8**6))*log(e/6.11_r8))**(-1) !form of Clausius-Clapeyron Equation
+    p_LCL=SLP(i)*(((TS(i)-Td)/223.15_r8)+1._r8)**(-3.5_r8)                 !Equation (12) from Georgakakos and Bras (1984)
+    T_LCL=TS(i)*(((TS(i)-Td)/223.15_r8)+1._r8)**(-1)                    !Equation (13) from Georgakakos and Bras (1984)
+    LCL=((287._r8*(TS(i)+T_LCL)/2._r8)/9.8_r8)*log(SLP(i)/p_LCL)         !Hypsometric equation
+
+    ! use fixed RH 
+    e_fxRH=es*80._r8/100._r8                                            !assume RH is 80%, as in WB06
+    Td_fxRH=((1/273.15_r8)-(461._r8/(2.5_r8*10._r8**6))*log(e_fxRH/6.11_r8))**(-1) !form of Clausius-Clapeyron Equation
+    p_LCL_fxRH=SLP(i)*(((TS(i)-Td_fxRH)/223.15_r8)+1._r8)**(-3.5_r8)                 !Equation (12) from Georgakakos and Bras (1984)
+    T_LCL_fxRH=TS(i)*(((TS(i)-Td_fxRH)/223.15_r8)+1._r8)**(-1)                    !Equation (13) from Georgakakos and Bras (1984)
+    LCL_fxRH=((287._r8*(TS(i)+T_LCL_fxRH)/2._r8)/9.8_r8)*log(SLP(i)/p_LCL_fxRH)         !Hypsometric equation
+
+    !calculate LTS
+    theta700=T700(i)*(1000._r8/700._r8)**(287._r8/1004._r8)
+    theta_slp=TS(i)*(1000._r8/(SLP(i)*0.01_r8))**(287._r8/1004._r8)
+    LTS(i)=theta700-theta_slp
+
+    !calculate the moist adaiabtic lapse rate at 850 hPa
+    T_bar=(TS(i)+T700(i))/2._r8 !approximation of the temperature at 850 hPa, following WB06
+    es_bar=6.11_r8*exp(((2.5_r8*10._r8**6)/461._r8)*((1._r8/273.15_r8)-(1._r8/T_bar))) !Clausius-Clapeyron Equation (Equation 4.23 from Curry and Webster)
+    qs_bar=0.622_r8*es_bar/(850._r8-es_bar) !Equation 4.37 of Curry and Webster
+    gamma_m=(9.8_r8/1004._r8)*(1._r8-((1._r8+(((2.5_r8*10._r8**6)*qs_bar)/(287._r8*T_bar)))/(1._r8+((((2.5_r8*10._r8**6)**2)*qs_bar)/(1004._r8*461._r8*(T_bar**2)))))) !Equation (5) of WB06
+
+    EIS_fxRH(i)=LTS(i)-gamma_m*(z700(i)-LCL_fxRH) !Equation (4) of WB06
+    EIS(i)=LTS(i)-gamma_m*(z700(i)-LCL) !Equation (4) of WB06
+
+
+end do ! i
+
+end subroutine calc_EIS
+! ########################################
+
 
 end module cam_diagnostics
