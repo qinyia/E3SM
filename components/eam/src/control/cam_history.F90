@@ -442,11 +442,16 @@ CONTAINS
         allocate(tape(t)%hlist(f)%hbuf(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         tape(t)%hlist(f)%hbuf = 0._r8
         if(tape(t)%hlist(f)%field%flag_xyfill .or. (avgflag_pertape(t) .eq. 'L')) then
-          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          ! YQIN 
+          !allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         else
-          allocate (tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          ! YQIN
+          !allocate (tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         end if
-        tape(t)%hlist(f)%nacs(:,:) = 0
+        !tape(t)%hlist(f)%nacs(:,:) = 0
+        tape(t)%hlist(f)%nacs(:,:,:) = 0
         tape(t)%hlist(f)%field%meridional_complement = -1
         tape(t)%hlist(f)%field%zonal_complement = -1
       end do
@@ -1619,7 +1624,10 @@ CONTAINS
     character(len=max_string_len)  :: locfn       ! Local filename
     character(len=max_fieldname_len), allocatable :: tmpname(:,:)
     integer, allocatable :: decomp(:,:), tmpnumlev(:,:)
-    integer, pointer :: nacs(:,:)    ! accumulation counter
+    ! YQIN
+!    integer, pointer :: nacs(:,:)    ! accumulation counter
+    integer, pointer :: nacs(:,:,:)    ! accumulation counter
+
     character(len=max_fieldname_len) :: fname_tmp ! local copy of field name
     character(len=max_fieldname_len) :: dname_tmp ! local copy of dim name
 
@@ -1898,9 +1906,14 @@ CONTAINS
         end if
         nullify(tape(t)%hlist(f)%nacs)
         if(tape(t)%hlist(f)%field%flag_xyfill .or. (avgflag_pertape(t)=='L')) then
-          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+        ! YQIN
+!          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+          allocate (tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
         else
-          allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+        ! YQIN
+!          allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+          allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim2:enddim2,begdim3:enddim3))
+
         end if
         ! initialize all buffers to zero - this will be overwritten later by the
         ! data in the history restart file if it exists.
@@ -1996,19 +2009,30 @@ CONTAINS
           ierr = pio_inq_varid(tape(t)%File, trim(fname_tmp)//'_nacs', vdesc)
           call cam_pio_var_info(tape(t)%File, vdesc, nacsdimcnt, dimids, dimlens)
 
-          if(nacsdimcnt > 0) then
+! YQIN
+!          if(nacsdimcnt > 0) then
+!            if (nfdims > 2) then
+!              ! nacs only has 2 dims (no levels)
+!              fdims(2) = fdims(3)
+!            end if
+!            allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
+!            nacs       => tape(t)%hlist(f)%nacs(:,:)
+!            call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:2),  &
+!                 dimlens(1:nacsdimcnt), nacs, vdesc)
+!          else
+!            allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
+!            ierr = pio_get_var(tape(t)%File, vdesc, nacsval)
+!            tape(t)%hlist(f)%nacs(1,:)= nacsval
+!          end if
+
+          write(*,*) "YQIN fname_tmp", trim(fname_tmp), "nfdims=",nfdims,"ndims=",ndims, "nacsdimcnt=", nacsdimcnt, "dimlens=",dimlens, "fdims(1:3)=", fdims(1:3)
+          nacs       => tape(t)%hlist(f)%nacs(:,:,:)
             if (nfdims > 2) then
-              ! nacs only has 2 dims (no levels)
-              fdims(2) = fdims(3)
-            end if
-            allocate(tape(t)%hlist(f)%nacs(begdim1:enddim1,begdim3:enddim3))
-            nacs       => tape(t)%hlist(f)%nacs(:,:)
-            call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:2),  &
+              call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:nfdims),  &
                  dimlens(1:nacsdimcnt), nacs, vdesc)
           else
-            allocate(tape(t)%hlist(f)%nacs(1,begdim3:enddim3))
-            ierr = pio_get_var(tape(t)%File, vdesc, nacsval)
-            tape(t)%hlist(f)%nacs(1,:)= nacsval
+              call cam_grid_read_dist_array(tape(t)%File, fdecomp, fdims(1:nfdims),  &
+                   dimlens(1:nacsdimcnt), nacs, vdesc)
           end if
 
         end do
@@ -3115,7 +3139,10 @@ end subroutine print_active_fldlst
 
     type (active_entry), pointer :: otape(:) ! Local history_tape pointer
     real(r8),pointer      :: hbuf(:,:)     ! history buffer
-    integer, pointer      :: nacs(:)       ! accumulation counter
+    ! YQIN
+    !integer, pointer      :: nacs(:)       ! accumulation counter
+    integer, pointer      :: nacs(:,:)       ! accumulation counter
+
     integer               :: begdim2, enddim2, endi
     integer               :: phys_decomp
     type (dim_index_2d)   :: dimind        ! 2-D dimension index
@@ -3151,7 +3178,9 @@ end subroutine print_active_fldlst
       flag_xyfill = otape(t)%hlist(f)%field%flag_xyfill
       fillvalue = otape(t)%hlist(f)%field%fillvalue
       avgflag = otape(t)%hlist(f)%avgflag
-      nacs   => otape(t)%hlist(f)%nacs(:,c)
+      !nacs   => otape(t)%hlist(f)%nacs(:,c)
+      nacs   => otape(t)%hlist(f)%nacs(:,:,c)
+
       hbuf => otape(t)%hlist(f)%hbuf(:,:,c)
 
       dimind = otape(t)%hlist(f)%field%get_dims(c)
@@ -3700,6 +3729,7 @@ end subroutine print_active_fldlst
     integer :: chardim            ! character dimension id
     integer :: dimenchar(2)       ! character dimension ids
     integer :: nacsdims(2)        ! dimension ids for nacs (used in restart file)
+
     integer :: bnddim             ! bounds dimension id
     integer :: timdim             ! unlimited dimension id
 
@@ -4179,14 +4209,20 @@ end subroutine print_active_fldlst
           if (.not. associated(tape(t)%hlist(f)%nacs_varid)) then
             allocate(tape(t)%hlist(f)%nacs_varid)
           end if
-          if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
+
+! YQIN 
+!          if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
+!            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
+!                 nacsdims(1:num_hdims), tape(t)%hlist(f)%nacs_varid)
+!          else
+!            ! Save just one value representing all chunks
+!            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
+!                 tape(t)%hlist(f)%nacs_varid)
+!          end if
+
             call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
-                 nacsdims(1:num_hdims), tape(t)%hlist(f)%nacs_varid)
-          else
-            ! Save just one value representing all chunks
-            call cam_pio_def_var(tape(t)%File, trim(fname_tmp), pio_int,      &
-                 tape(t)%hlist(f)%nacs_varid)
-          end if
+               dimids_tmp(1:fdims), tape(t)%hlist(f)%nacs_varid)
+
         end if
       end do ! Loop over output patches
     end do   ! Loop over fields
@@ -4310,7 +4346,10 @@ end subroutine print_active_fldlst
 
       if (flag_xyfill) then
         do k = jb, je
-          where (tape(t)%hlist(f)%nacs(ib:ie, c) == 0)
+          ! YQIN
+!          where (tape(t)%hlist(f)%nacs(ib:ie, c) == 0)
+          where (tape(t)%hlist(f)%nacs(ib:ie, k, c) == 0)
+
             tape(t)%hlist(f)%hbuf(ib:ie,k,c) = tape(t)%hlist(f)%field%fillvalue
           endwhere
         end do
@@ -4319,18 +4358,19 @@ end subroutine print_active_fldlst
       if (avgflag == 'A' .or. avgflag == 'B' .or. avgflag == 'L') then
         if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
           do k = jb, je
-            where (tape(t)%hlist(f)%nacs(ib:ie,c) /= 0)
+            where (tape(t)%hlist(f)%nacs(ib:ie,k,c) /= 0)
               tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
                    tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
-                   / tape(t)%hlist(f)%nacs(ib:ie,c)
+                   / tape(t)%hlist(f)%nacs(ib:ie,k,c)
             endwhere
           end do
-        else if(tape(t)%hlist(f)%nacs(1,c) > 0) then
-          do k=jb,je
-            tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
-                 tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
-                 / tape(t)%hlist(f)%nacs(1,c)
-          end do
+!        else if(tape(t)%hlist(f)%nacs(1,1,c) > 0) then
+!
+!          do k=jb,je
+!            tape(t)%hlist(f)%hbuf(ib:ie,k,c) = &
+!                 tape(t)%hlist(f)%hbuf(ib:ie,k,c) &
+!                 / tape(t)%hlist(f)%nacs(1,k,c)
+!          end do
         end if
       end if
     end do
@@ -4371,7 +4411,8 @@ end subroutine print_active_fldlst
       dimind = tape(t)%hlist(f)%field%get_dims(c)
       tape(t)%hlist(f)%hbuf(dimind%beg1:dimind%end1,dimind%beg2:dimind%end2,c)=0._r8
     end do
-    tape(t)%hlist(f)%nacs(:,:) = 0
+!    tape(t)%hlist(f)%nacs(:,:) = 0
+    tape(t)%hlist(f)%nacs(:,:,:) = 0
 
     call t_stopf ('h_zero')
 
@@ -4496,19 +4537,28 @@ end subroutine print_active_fldlst
     end do
     !! NACS
     if(restart) then
-      if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
-        if (nadims > 2) then
-          adims(2) = adims(3)
-          nadims = 2
-        end if
-        call cam_grid_dimensions(fdecomp, fdims(1:2), nacsrank)
-        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims(1:nadims),&
-             fdims(1:nacsrank), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+! YQIN
+!      if (size(tape(t)%hlist(f)%nacs, 1) > 1) then
+!        if (nadims > 2) then
+!          adims(2) = adims(3)
+!          nadims = 2
+!        end if
+!        call cam_grid_dimensions(fdecomp, fdims(1:2), nacsrank)
+!        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims(1:nadims),&
+!             fdims(1:nacsrank), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+!
+!        else
+!          ierr = pio_put_var(tape(t)%File, tape(t)%hlist(f)%nacs_varid,     &
+!               tape(t)%hlist(f)%nacs(:, tape(t)%hlist(f)%field%begdim3:tape(t)%hlist(f)%field%enddim3))
+!        end if
 
-        else
-          ierr = pio_put_var(tape(t)%File, tape(t)%hlist(f)%nacs_varid,     &
-               tape(t)%hlist(f)%nacs(:, tape(t)%hlist(f)%field%begdim3:tape(t)%hlist(f)%field%enddim3))
-        end if
+        !call cam_grid_dimensions(fdecomp, fdims(1:1), nacsrank)
+!        write(*,*) "YQIN fdims=", fdims, "frank=", frank
+!        write(*,*) "YQIN nadims=", nadims, "nacsrank=", nacsrank, "adims=", adims, "fdecomp=", fdecomp
+
+        call cam_grid_write_dist_array(tape(t)%File, fdecomp, adims,&
+             fdims(1:3), tape(t)%hlist(f)%nacs, tape(t)%hlist(f)%nacs_varid)
+
       end if
 
     return

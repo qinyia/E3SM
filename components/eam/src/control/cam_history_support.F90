@@ -160,7 +160,10 @@ module cam_history_support
     integer                   :: hwrt_prec   ! history output precision
     real(r8),         pointer :: hbuf(:,:,:) => NULL()
     type(var_desc_t), pointer :: varid(:)    => NULL() ! variable ids
-    integer,          pointer :: nacs(:,:)   => NULL() ! accumulation counter
+    ! YQIN
+!    integer,          pointer :: nacs(:,:)   => NULL() ! accumulation counter
+    integer,          pointer :: nacs(:,:,:)   => NULL() ! accumulation counter
+
     type(var_desc_t), pointer :: nacs_varid  => NULL()
   end type hentry
 
