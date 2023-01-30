@@ -1014,6 +1014,36 @@
       <mask>oRRS18to6</mask>
     </model_grid>
 
+     <model_grid alias="sox4v3pg2_r05_oRRS18to6v3">
+      <grid name="atm">ne0np4_sox4v3.pg2</grid>
+      <grid name="lnd">r05</grid>
+      <grid name="ocnice">oRRS18to6v3</grid>
+      <grid name="rof">r05</grid>
+      <grid name="glc">null</grid>
+      <grid name="wav">null</grid>
+      <mask>oRRS18to6v3</mask>
+    </model_grid>
+      
+    <model_grid alias="sox8v3pg2_r05_oRRS18to6v3">
+      <grid name="atm">ne0np4_sox8v3.pg2</grid>
+      <grid name="lnd">r05</grid>
+      <grid name="ocnice">oRRS18to6v3</grid>
+      <grid name="rof">r05</grid>
+      <grid name="glc">null</grid>
+      <grid name="wav">null</grid>
+      <mask>oRRS18to6v3</mask>
+    </model_grid>
+
+    <model_grid alias="sox32v3pg2_r05_oRRS18to6v3">
+      <grid name="atm">ne0np4_sox32v3.pg2</grid>
+      <grid name="lnd">r05</grid>
+      <grid name="ocnice">oRRS18to6v3</grid>
+      <grid name="rof">r05</grid>
+      <grid name="glc">null</grid>
+      <grid name="wav">null</grid>
+      <mask>oRRS18to6v3</mask>
+    </model_grid>
+      
     <model_grid alias="ne16_ne16" compset="(DOCN|XOCN|SOCN|AQP1)">
       <grid name="atm">ne16np4</grid>
       <grid name="lnd">ne16np4</grid>
@@ -2690,6 +2720,30 @@
       <desc>1-deg with 1/4-deg over Eastern North Atlantic (version 1):</desc>
     </domain>
 
+     <domain name="ne0np4_sox4v3.pg2">
+      <nx>32144</nx>
+      <ny>1</ny>
+      <file grid="atm|lnd" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.lnd.sox4v3pg2_oRRS18to6v3.220209.nc</file>
+      <file grid="ice|ocn" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/domain.ocn.sox4v3pg2_oRRS18to6v3.220209.nc</file>
+      <desc>1-deg with 1/4-deg over SO</desc>
+    </domain>
+      
+    <domain name="ne0np4_sox8v3.pg2">
+      <nx>46400</nx>
+      <ny>1</ny>
+      <file grid="atm|lnd" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/domain.lnd.sox8v3pg2_oRRS18to6v3.220220.nc</file>
+      <file grid="ice|ocn" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/domain.ocn.sox8v3pg2_oRRS18to6v3.220220.nc</file>
+      <desc>1-deg with 1/8-deg over SO</desc>
+    </domain>
+
+    <domain name="ne0np4_sox32v3.pg2">
+      <nx>282004</nx>
+      <ny>1</ny>
+      <file grid="atm|lnd" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/domain.lnd.sox32v3pg2_oRRS18to6v3.220220.nc</file>
+      <file grid="ice|ocn" mask="oRRS18to6v3">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/domain.ocn.sox32v3pg2_oRRS18to6v3.220220.nc</file>
+      <desc>1-deg with 1/32-deg over SO</desc>
+    </domain>
+      
     <domain name="ne0np4_twpx4v1">
       <nx>81434</nx>
       <ny>1</ny>
@@ -3397,14 +3451,67 @@
       <map name="LND2ATM_SMAPNAME">cpl/cpl6/map_ne30np4_TO_enax4v1_aave.170517.nc</map>
     </gridmap>
 
-    <gridmap atm_grid="ne0np4_enax4v1" ocn_grid="gx1v6">
-      <map name="ATM2OCN_FMAPNAME">cpl/cpl6/map_enax4v1_TO_gx1v6_aave.170523.nc</map>
-      <map name="ATM2OCN_SMAPNAME">cpl/cpl6/map_enax4v1_TO_gx1v6_blin.170523.nc</map>
-      <map name="ATM2OCN_VMAPNAME">cpl/cpl6/map_enax4v1_TO_gx1v6_patc.170523.nc</map>
-      <map name="OCN2ATM_FMAPNAME">cpl/cpl6/map_gx1v6_TO_enax4v1_aave.170523.nc</map>
-      <map name="OCN2ATM_SMAPNAME">cpl/cpl6/map_gx1v6_TO_enax4v1_aave.170523.nc</map>
+     <gridmap atm_grid="ne0np4_sox4v3.pg2" lnd_grid="r05">
+      <map name="ATM2LND_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_r05_mono.20220218.nc</map>
+      <map name="ATM2LND_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_r05_bilin.20220218.nc</map>
+      <map name="LND2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_r05_to_sox4v3pg2_mono.20220218.nc</map>
+      <map name="LND2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_r05_to_sox4v3pg2_mono.20220218.nc</map>
     </gridmap>
 
+    <gridmap atm_grid="ne0np4_sox4v3.pg2" ocn_grid="oRRS18to6v3">
+      <map name="ATM2OCN_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_oRRS18to6v3_mono.20220218.nc</map>
+      <map name="ATM2OCN_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="ATM2OCN_VMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="OCN2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_oRRS18to6v3_to_sox4v3pg2_mono.20220218.nc</map>
+      <map name="OCN2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_oRRS18to6v3_to_sox4v3pg2_mono.20220218.nc</map>
+    </gridmap>
+
+    <gridmap atm_grid="ne0np4_sox4v3.pg2" rof_grid="r05">
+      <map name="ATM2ROF_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_r05_mono.20220218.nc</map>
+      <map name="ATM2ROF_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox4v3pg2/map_sox4v3pg2_to_r05_mono.20220218.nc</map>
+    </gridmap>
+      
+    <gridmap atm_grid="ne0np4_sox8v3.pg2" lnd_grid="r05">
+      <map name="ATM2LND_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_r05_mono.20220218.ncc</map>
+      <map name="ATM2LND_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_r05_bilin.20220218.nc</map>
+      <map name="LND2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_r05_to_sox8v3pg2_mono.20220218.nc</map>
+      <map name="LND2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_r05_to_sox8v3pg2_mono.20220218.nc</map>
+    </gridmap>
+      
+    <gridmap atm_grid="ne0np4_sox8v3.pg2" ocn_grid="oRRS18to6v3">
+      <map name="ATM2OCN_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_oRRS18to6v3_mono.20220218.nc</map>
+      <map name="ATM2OCN_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="ATM2OCN_VMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="OCN2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_oRRS18to6v3_to_sox8v3pg2_mono.20220218.nc</map>
+      <map name="OCN2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_oRRS18to6v3_to_sox8v3pg2_mono.20220218.nc</map>
+    </gridmap>
+      
+    <gridmap atm_grid="ne0np4_sox8v3.pg2" rof_grid="r05">
+      <map name="ATM2ROF_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_r05_mono.20220218.nc</map>
+      <map name="ATM2ROF_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox8v3pg2/map_sox8v3pg2_to_r05_mono.20220218.nc</map>
+    </gridmap>
+
+     <gridmap atm_grid="ne0np4_sox32v3.pg2" lnd_grid="r05">
+      <map name="ATM2LND_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_r05_mono.20220218.nc</map>
+      <map name="ATM2LND_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_r05_bilin.20220218.nc</map>
+      <map name="LND2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_r05_to_sox32v3pg2_mono.20220218.nc</map>
+      <map name="LND2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_r05_to_sox32v3pg2_mono.20220218.nc</map>
+    </gridmap>
+      
+     <gridmap atm_grid="ne0np4_sox32v3.pg2" ocn_grid="oRRS18to6v3">
+      <map name="ATM2OCN_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_oRRS18to6v3_mono.20220218.nc</map>
+      <map name="ATM2OCN_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="ATM2OCN_VMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_oRRS18to6v3_bilin.20220218.nc</map>
+      <map name="OCN2ATM_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_oRRS18to6v3_to_sox32v3pg2_mono.20220218.ncc</map>
+      <map name="OCN2ATM_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_oRRS18to6v3_to_sox32v3pg2_mono.20220218.nc</map>
+    </gridmap>
+      
+     <gridmap atm_grid="ne0np4_sox32v3.pg2" rof_grid="r05">
+      <map name="ATM2ROF_FMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_r05_mono.20220218.nc</map>
+      <map name="ATM2ROF_SMAPNAME">/global/cscratch1/sd/cbeall/e3sm/grids/sox32v3pg2/map_sox32v3pg2_to_r05_mono.20220218.nc</map>
+    </gridmap>
+
+      
     <gridmap atm_grid="ne0np4_enax4v1" ocn_grid="oRRS18to6">
       <map name="ATM2OCN_FMAPNAME">cpl/cpl6/map_enax4v1_TO_oRRS18to6_aave.170620.nc</map>
       <map name="ATM2OCN_SMAPNAME">cpl/cpl6/map_enax4v1_TO_oRRS18to6_blin.170620.nc</map>
@@ -3412,6 +3519,7 @@
       <map name="OCN2ATM_FMAPNAME">cpl/cpl6/map_oRRS18to6_TO_enax4v1_aave.170620.nc</map>
       <map name="OCN2ATM_SMAPNAME">cpl/cpl6/map_oRRS18to6_TO_enax4v1_aave.170620.nc</map>
     </gridmap>
+
 
     <gridmap atm_grid="ne0np4_northamericax4v1" ocn_grid="oRRS15to5">
       <map name="ATM2OCN_FMAPNAME">cpl/gridmaps/northamericax4v1np4/map_northamericax4v1_to_oRRS15to5_mono.20191022.nc</map>

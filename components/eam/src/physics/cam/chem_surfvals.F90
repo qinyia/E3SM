@@ -503,6 +503,9 @@ subroutine chem_surfvals_set_all()
    real(r8) deltat               ! delta time
    real(r8) fact1, fact2         ! time interpolation factors
    real(r8) cfcscl               ! cfc scale factor for f11
+   
+   real(r8) rmwco2 
+   real(r8) co2mmr
 
    integer yearRan_model         ! model ran year
 !
@@ -555,15 +558,15 @@ subroutine chem_surfvals_set_all()
 ! below and comment the call to endrun and previous write
 !
    if (nyrp > ntim) then
-      call endrun ('chem_surfvals_set_all: error - current date is past the end of valid data')
+      !call endrun ('chem_surfvals_set_all: error - current date is past the end of valid data')
 !         write(iulog,*)'chem_surfvals_set_all: using ghg data for ',yrdata(ntim)
-!         co2vmr = co2(ntim)*1.e-06
-!         ch4vmr = ch4(ntim)*1.e-09
-!         n2ovmr = n2o(ntim)*1.e-09
-!         f11vmr = f11(ntim)*1.e-12*(1.+cfcscl)
-!         f12vmr = f12(ntim)*1.e-12
-!         co2mmr = rmwco2 * co2vmr
-!         return
+         co2vmr = co2(ntim)*1.e-06
+         ch4vmr = ch4(ntim)*1.e-09
+         n2ovmr = n2o(ntim)*1.e-09
+         f11vmr = f11(ntim)*1.e-12*(1.+cfcscl)
+         f12vmr = f12(ntim)*1.e-12
+         co2mmr = rmwco2 * co2vmr
+         return
    endif
 !
 ! determine time interpolation factors, check sanity
