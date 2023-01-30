@@ -98,6 +98,11 @@ use subcol_utils,   only: subcol_get_scheme
 use perf_mod,       only: t_startf, t_stopf
 use scamMod,        only: precip_off
 
+! YQIN 11/22/22
+use interpolate_data,only: vertinterp
+
+
+
 implicit none
 private
 save
@@ -176,6 +181,14 @@ integer :: &
    relvar_idx,         &
    cmeliq_idx,         &
    accre_enhan_idx
+
+! YQIN 10/20/22
+integer :: cdnumc_avg_idx = -1
+integer :: cdnumc_acc_idx = -1
+integer :: icwnc_idx = -1 
+integer :: cdnumc_925_idx = -1
+integer :: cdnumc_wavg_idx = -1
+integer :: ncic_avg_idx = -1 
 
 ! Fields needed as inputs to COSP
 integer :: &
@@ -467,6 +480,21 @@ subroutine micro_mg_cam_register
   ! Cloud fraction for liquid drops + snow
   call pbuf_add_field('CLDFSNOW ',  'physpkg',dtype_r8,(/pcols,pver,dyn_time_lvls/), cldfsnow_idx)
 
+  ! YQIN 10/20/22
+  ! cloud-layer mean CDNC
+  call pbuf_add_field('CDNUMC_AVG', 'global', dtype_r8, (/pcols/),      cdnumc_avg_idx)
+  ! vertically integrated CDNC
+  call pbuf_add_field('CDNUMC_ACC', 'global', dtype_r8, (/pcols/),      cdnumc_acc_idx)
+  ! in-cloud CDNC 
+  call pbuf_add_field('ICWNC',      'global', dtype_r8, (/pcols,pver/), icwnc_idx)
+  ! in-cloud CDNC at 925 hPa
+  call pbuf_add_field('CDNUMC_925', 'global', dtype_r8, (/pcols/),      cdnumc_925_idx)
+  ! cloud-layer pressure-weighted mean CDNC
+   call pbuf_add_field('CDNUMC_WAVG', 'global', dtype_r8, (/pcols/),      cdnumc_wavg_idx)
+  ! another in-cloud CDNC
+  call pbuf_add_field('NCIC_AVG',   'global', dtype_r8, (/pcols/),      ncic_avg_idx)
+
+
   if (prog_modal_aero) then
      call pbuf_add_field('RATE1_CW2PR_ST','physpkg',dtype_r8,(/pcols,pver/), rate1_cw2pr_st_idx)
   endif
@@ -518,6 +546,14 @@ subroutine micro_mg_cam_register
 
     call pbuf_register_subcol('REI',         'micro_mg_cam_register', rei_idx)
     call pbuf_register_subcol('REL',         'micro_mg_cam_register', rel_idx)
+
+    ! YQIN 10/20/22
+    call pbuf_register_subcol('CDNUMC_AVG',  'micro_mg_cam_register', cdnumc_avg_idx)
+    call pbuf_register_subcol('CDNUMC_ACC',  'micro_mg_cam_register', cdnumc_acc_idx)
+    call pbuf_register_subcol('ICWNC',       'micro_mg_cam_register', icwnc_idx)
+    call pbuf_register_subcol('CDNUMC_925',  'micro_mg_cam_register', cdnumc_925_idx)
+    call pbuf_register_subcol('CDNUMC_WAVG',  'micro_mg_cam_register', cdnumc_wavg_idx)
+    call pbuf_register_subcol('NCIC_AVG',    'micro_mg_cam_register', ncic_avg_idx)
 
     ! Mitchell ice effective diameter for radiation
     call pbuf_register_subcol('DEI',         'micro_mg_cam_register', dei_idx)
@@ -803,7 +839,10 @@ subroutine micro_mg_cam_init(pbuf2d)
    call addfld ('MPDI2V', (/ 'lev' /), 'A', 'kg/kg/s', 'Ice <--> Vapor tendency - Morrison microphysics'         )
    call addfld ('MPDI2W', (/ 'lev' /), 'A', 'kg/kg/s', 'Ice <--> Water tendency - Morrison microphysics'         )
    call addfld ('MPDI2P', (/ 'lev' /), 'A', 'kg/kg/s', 'Ice <--> Precip tendency - Morrison microphysics'        )
-   call addfld ('ICWNC', (/ 'lev' /), 'A', 'm-3', 'Prognostic in-cloud water number conc'                   )
+   ! YQIN 11/09/22 change the output unit
+   !call addfld ('ICWNC', (/ 'lev' /), 'A', 'm-3', 'Prognostic in-cloud water number conc'                   )
+   call addfld ('ICWNC', (/ 'lev' /), 'A', 'cm-3', 'Prognostic in-cloud water number conc'                   )
+
    call addfld ('ICINC', (/ 'lev' /), 'A', 'm-3', 'Prognostic in-cloud ice number conc'                     )
    call addfld ('EFFLIQ_IND', (/ 'lev' /), 'A','Micron', 'Prognostic droplet effective radius (indirect effect)'   )
    call addfld ('CDNUMC', horiz_only,    'A', '1/m2', 'Vertically-integrated droplet concentration'             )
@@ -811,6 +850,14 @@ subroutine micro_mg_cam_init(pbuf2d)
         &in-cloud Initial Liquid WP (Before Micro)' )
    call addfld ('MPICIWPI', horiz_only,    'A', 'kg/m2', 'Vertically-integrated &
         &in-cloud Initial Ice WP (Before Micro)'    )
+
+   ! YQIN 10/23/22
+   call addfld ('CDNUMC_AVG', horiz_only,    'A', '1/cm3', 'Cloud layer mean in-cloud droplet concentration'             )
+   call addfld ('CDNUMC_ACC', horiz_only,    'A', '1/cm3', 'Vertically-integrated in-cloud droplet concentration'        )
+   call addfld ('CDNUMC_925', horiz_only,    'A', '1/cm3', 'In-cloud CDNC at 925 hPa')
+   call addfld ('CDNUMC_WAVG', horiz_only,    'A', '1/cm3', 'Cloud layer pressure-weighted mean in-cloud droplet concentration'             )
+   call addfld ('NCIC_AVG',   horiz_only,    'A', '1/cm3', 'Cloud layer mean in-cloud droplet concentration based on ncic_grid'             )
+
 
    ! This is provided as an example on how to write out subcolumn output
    ! NOTE -- only 'I' should be used for sub-column fields as subc-columns could shift from time-step to time-step
@@ -927,6 +974,15 @@ subroutine micro_mg_cam_init(pbuf2d)
       call add_default ('FREQS    ', 1, ' ')
       call add_default ('FREQL    ', 1, ' ')
       call add_default ('FREQI    ', 1, ' ')
+
+      ! YQIN 10/23/22
+      call add_default ('CDNUMC_AVG', 1, ' ')
+      call add_default ('CDNUMC_ACC', 1, ' ')
+      call add_default ('ICWNC', 1, ' ')
+      call add_default ('CDNUMC_925', 1, ' ')
+      call add_default ('CDNUMC_WAVG', 1, ' ')
+      call add_default ('NCIC_AVG', 1, ' ')
+
       do m = 1, ncnst
          call cnst_get_ind(cnst_names(m), mm)
          call add_default(cnst_name(mm), 1, ' ')
@@ -1420,6 +1476,14 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    real(r8) :: freql_grid(pcols,pver)
 
    real(r8) :: cdnumc_grid(pcols)           ! Vertically-integrated droplet concentration
+
+   ! YQIN 10/20/22
+   real(r8), pointer :: cdnumc_avg_grid(:)   ! cloud layer mean CDNC
+   real(r8), pointer :: cdnumc_acc_grid(:)   ! vertically-integrated in-cloud CDNC
+   real(r8), pointer :: cdnumc_925_grid(:)   ! in-cloud CDNC at 925 hPa
+   real(r8), pointer :: cdnumc_wavg_grid(:)  ! cloud layer pressure-weighted mean CDNC
+   real(r8), pointer :: ncic_avg_grid(:)     ! cloud layer mean CDNC based on ncic_grid
+
    real(r8) :: icimrst_grid_out(pcols,pver) ! In stratus ice mixing ratio
    real(r8) :: icwmrst_grid_out(pcols,pver) ! In stratus water mixing ratio
 
@@ -1488,7 +1552,11 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    real(r8) :: prco_grid(pcols,pver)
    real(r8) :: prao_grid(pcols,pver)
    real(r8) :: icecldf_grid(pcols,pver)
-   real(r8) :: icwnc_grid(pcols,pver)
+
+   ! YQIN 11/09/22
+   !real(r8) :: icwnc_grid(pcols,pver)
+   real(r8), pointer :: icwnc_grid(:,:)
+
    real(r8) :: icinc_grid(pcols,pver)
    real(r8) :: qcreso_grid(pcols,pver)
    real(r8) :: melto_grid(pcols,pver)
@@ -1566,6 +1634,10 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
 
    integer :: autocl_idx, accretl_idx  ! Aerocom IND3
    integer :: cldliqbf_idx, cldicebf_idx, numliqbf_idx, numicebf_idx
+
+   ! YQIN 10/23/22
+   integer :: j 
+   real(r8) :: psum ! count the sum of pdel levels with in-cloud CDNC
 
    !-------------------------------------------------------------------------------
 
@@ -1650,6 +1722,15 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    call pbuf_get_field(pbuf, wsedl_idx,       wsedl,       col_type=col_type)
    call pbuf_get_field(pbuf, qme_idx,         qme,         col_type=col_type)
 
+   ! YQIN 10/20/22
+   call pbuf_get_field(pbuf, cdnumc_avg_idx,  cdnumc_avg_grid,  col_type=col_type)
+   call pbuf_get_field(pbuf, cdnumc_acc_idx,  cdnumc_acc_grid,  col_type=col_type)
+   call pbuf_get_field(pbuf, icwnc_idx,       icwnc_grid,       col_type=col_type)
+   call pbuf_get_field(pbuf, cdnumc_925_idx,  cdnumc_925_grid,  col_type=col_type)
+   call pbuf_get_field(pbuf, cdnumc_wavg_idx,  cdnumc_wavg_grid,  col_type=col_type)
+   call pbuf_get_field(pbuf, ncic_avg_idx,    ncic_avg_grid,    col_type=col_type)
+
+
    call pbuf_get_field(pbuf, cldo_idx,        cldo,     start=(/1,1,itim_old/), kount=(/psetcols,pver,1/), col_type=col_type)
    call pbuf_get_field(pbuf, cldfsnow_idx,    cldfsnow, start=(/1,1,itim_old/), kount=(/psetcols,pver,1/), col_type=col_type)
    call pbuf_get_field(pbuf, cc_t_idx,        CC_t,     start=(/1,1,itim_old/), kount=(/psetcols,pver,1/), col_type=col_type)
@@ -1699,6 +1780,14 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
       call pbuf_get_field(pbuf, rei_idx,         rei_grid)
       call pbuf_get_field(pbuf, wsedl_idx,       wsedl_grid)
       call pbuf_get_field(pbuf, qme_idx,         qme_grid)
+
+      ! YQIN 10/20/22
+      call pbuf_get_field(pbuf, cdnumc_avg_idx,  cdnumc_avg_grid)
+      call pbuf_get_field(pbuf, cdnumc_acc_idx,  cdnumc_acc_grid)
+      call pbuf_get_field(pbuf, icwnc_idx,       icwnc_grid)
+      call pbuf_get_field(pbuf, cdnumc_925_idx,  cdnumc_925_grid)
+      call pbuf_get_field(pbuf, cdnumc_wavg_idx,  cdnumc_wavg_grid)
+      call pbuf_get_field(pbuf, ncic_avg_idx,    ncic_avg_grid)
 
       call pbuf_get_field(pbuf, cldo_idx,     cldo_grid,     start=(/1,1,itim_old/), kount=(/pcols,pver,1/))
       call pbuf_get_field(pbuf, cldfsnow_idx, cldfsnow_grid, start=(/1,1,itim_old/), kount=(/pcols,pver,1/))
@@ -2869,6 +2958,82 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    ! Column droplet concentration
    cdnumc_grid(:ngrdcol) = sum(nc_grid(:ngrdcol,top_lev:pver) * &
         pdel_grid(:ngrdcol,top_lev:pver)/gravit, dim=2)
+
+
+   ! YQIN 11/15/22 new method to get vertically-integrated in cloud CDNC
+   cdnumc_acc_grid(:ngrdcol) = sum(ncic_grid(:ngrdcol,top_lev:pver) * &
+        pdel_grid(:ngrdcol,top_lev:pver)/gravit, dim=2)
+   ! convert from 1/m2 to 1/cm2
+   cdnumc_acc_grid(:ngrdcol) = cdnumc_acc_grid(:ngrdcol)/1.e4_r8
+
+   ! YQIN 10/23/22
+   ! cloud layer mean CDNC
+   cdnumc_avg_grid(:ngrdcol) = 0._r8
+   ! cloud layer pressure-weighted mean CDNC
+   cdnumc_wavg_grid(:ngrdcol) = 0._r8
+   ncic_avg_grid(:ngrdcol) = 0._r8
+
+   do i = 1, ngrdcol
+       j = 0
+       psum = 0._r8
+       do k = top_lev, pver
+           ! YQIN 12/08/22: also consider minimum in-cloud water mixing ratio
+           !if (icwnc_grid(i,k) .ge. 1._r8) then
+           !if (icwnc_grid(i,k) .ge. 1._r8 .and. icwmrst_grid(i,k) .gt. qsmall) then
+           if (icwnc_grid(i,k) .ge. 1._r8 .and. liqcldf_grid(i,k) > 0.01_r8 .and. icwmrst_grid(i,k) > 5.e-5_r8) then
+               cdnumc_avg_grid(i) = cdnumc_avg_grid(i) + icwnc_grid(i,k)
+               j = j + 1
+
+               cdnumc_wavg_grid(i) = cdnumc_wavg_grid(i) + icwnc_grid(i,k)*pdel_grid(i,k)
+               psum = psum + pdel_grid(i,k)
+           end if 
+
+       end do 
+
+       if (j>0)then
+           cdnumc_avg_grid(i) = cdnumc_avg_grid(i)/j
+           cdnumc_wavg_grid(i) = cdnumc_wavg_grid(i)/psum
+       end if
+
+       ! convert from 1/m3 to 1/cm3
+       cdnumc_avg_grid(i) = cdnumc_avg_grid(i)/1.e6_r8
+       cdnumc_wavg_grid(i) = cdnumc_wavg_grid(i)/1.e6_r8
+   end do
+
+   ! YQIN 12/12/22 NCIC_AVG 
+   do i = 1, ngrdcol
+       j = 0
+       do k = top_lev, pver
+           if (ncic_grid(i,k) .ge. 1._r8) then 
+               ncic_avg_grid(i) = ncic_avg_grid(i) + ncic_grid(i,k)*state_loc%pmid(i,k) / (287.15_r8*state_loc%t(i,k))
+               j = j + 1
+           end if
+       end do
+
+       if (j>0) then
+           ncic_avg_grid(i) = ncic_avg_grid(i)/j 
+       end if 
+
+       ! convert from 1/m3 to 1/cm3
+       ncic_avg_grid(i) = ncic_avg_grid(i)/1.e6_r8
+   end do 
+
+
+   ! convert from 1/m3 to 1/cm3
+   icwnc_grid = icwnc_grid/1.e6_r8
+
+   ! YQIN 11/22/22
+   ! in-cloud CDNC at 925 hPa 
+   cdnumc_925_grid(:ngrdcol) = 0._r8
+   call vertinterp(ngrdcol, pcols, pver, state_loc%pmid, 92500._r8, icwnc_grid, cdnumc_925_grid)
+
+
+   call outfld('CDNUMC_AVG',      cdnumc_avg_grid,      pcols, lchnk)
+   call outfld('CDNUMC_ACC',      cdnumc_acc_grid,      pcols, lchnk)
+   call outfld('CDNUMC_925',      cdnumc_925_grid,      pcols, lchnk)
+   call outfld('CDNUMC_WAVG',      cdnumc_wavg_grid,      pcols, lchnk)
+   call outfld('NCIC_AVG',        ncic_avg_grid,        pcols, lchnk)
+
 
    ! Averaging for new output fields
    efcout_grid      = 0._r8

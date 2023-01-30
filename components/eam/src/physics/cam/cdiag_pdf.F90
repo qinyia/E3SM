@@ -175,41 +175,41 @@ subroutine cdiag_pdf_init()
            end do ! ireg
        end do ! itype
 
-!#       do itype = 1,N_CAT
-!#       do ireg = 1, N_REGIME
-!#           call add_default (          'PDF_CF'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (         'PDF_REL'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (       'PDF_lnCCN'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (      'PDF_lnCDNC'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (   'PDF_lnCDNC925'//cats(itype)//regime(ireg),      1, ' ')
-!#!           call add_default (  'PDF_lnCDNCWAVG'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (     'PDF_lnICLWP'//cats(itype)//regime(ireg),      1, ' ')
-!#
-!#           call add_default ('PDF_lnCCN_lnCDNC'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default (  'PDF_lnCDNC_REL'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default ( 'PDFR_lnCCN_ALBA'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default ( 'PDFR_lnCCN_ALBC'//cats(itype)//regime(ireg),      1, ' ')
-!#           call add_default ( 'PDFR_lnCCN_CODA'//cats(itype)//regime(ireg),      1, ' ')
-!#
-!#           !call add_default (   'PDF_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
-!#           call add_default (   'PDFR_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
-!#           call add_default (   'ALBA_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
-!#           call add_default (   'ALBC_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
-!#           call add_default (   'CODA_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
-!#
-!#!           call add_default (      'PDF_CFp'//cats(itype)//regime(ireg),        1, ' ')
-!#!           call add_default (     'PDF_RELp'//cats(itype)//regime(ireg),        1, ' ')
-!#!           call add_default (   'PDF_lnCCNp'//cats(itype)//regime(ireg),        1, ' ')
-!#!           call add_default (  'PDF_lnCDNCp'//cats(itype)//regime(ireg),        1, ' ')
-!#!           call add_default ( 'PDF_lnICLWPp'//cats(itype)//regime(ireg),        1, ' ')
-!#
-!#!           call add_default ('PDF_lnCCNp_lnCDNCp'//cats(itype)//regime(ireg),   1, ' ')
-!#!           call add_default ('PDF_lnCDNCp_RELp'//cats(itype)//regime(ireg),     1, ' ')
-!#
-!#!           call add_default ('PDFR_NDLWPCFp'//cats(itype)//regime(ireg),       1, ' ')
-!#!           call add_default ('CODA_NDLWPCFp'//cats(itype)//regime(ireg),       1, ' ')
-!#       end do
-!#       end do
+       do itype = 1,N_CAT
+       do ireg = 1, N_REGIME
+           call add_default (          'PDF_CF'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (         'PDF_REL'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (       'PDF_lnCCN'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (      'PDF_lnCDNC'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (   'PDF_lnCDNC925'//cats(itype)//regime(ireg),      1, ' ')
+!           call add_default (  'PDF_lnCDNCWAVG'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (     'PDF_lnICLWP'//cats(itype)//regime(ireg),      1, ' ')
+
+           call add_default ('PDF_lnCCN_lnCDNC'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default (  'PDF_lnCDNC_REL'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default ( 'PDFR_lnCCN_ALBA'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default ( 'PDFR_lnCCN_ALBC'//cats(itype)//regime(ireg),      1, ' ')
+           call add_default ( 'PDFR_lnCCN_CODA'//cats(itype)//regime(ireg),      1, ' ')
+
+           !call add_default (   'PDF_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
+           call add_default (   'PDFR_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
+           call add_default (   'ALBA_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
+           call add_default (   'ALBC_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
+           call add_default (   'CODA_NDLWPCF'//cats(itype)//regime(ireg),       1, ' ')
+
+!           call add_default (      'PDF_CFp'//cats(itype)//regime(ireg),        1, ' ')
+!           call add_default (     'PDF_RELp'//cats(itype)//regime(ireg),        1, ' ')
+!           call add_default (   'PDF_lnCCNp'//cats(itype)//regime(ireg),        1, ' ')
+!           call add_default (  'PDF_lnCDNCp'//cats(itype)//regime(ireg),        1, ' ')
+!           call add_default ( 'PDF_lnICLWPp'//cats(itype)//regime(ireg),        1, ' ')
+
+!           call add_default ('PDF_lnCCNp_lnCDNCp'//cats(itype)//regime(ireg),   1, ' ')
+!           call add_default ('PDF_lnCDNCp_RELp'//cats(itype)//regime(ireg),     1, ' ')
+
+!           call add_default ('PDFR_NDLWPCFp'//cats(itype)//regime(ireg),       1, ' ')
+!           call add_default ('CODA_NDLWPCFp'//cats(itype)//regime(ireg),       1, ' ')
+       end do
+       end do
 
        ! YQIN -- define bins 
        ! cloud fraction 

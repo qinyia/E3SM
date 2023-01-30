@@ -275,6 +275,8 @@ subroutine ndrop_init
    ! set the add_default fields  
    if (history_amwg) then
       call add_default('CCN3', 1, ' ')
+      ! YQIN 10/20/22
+      call add_default('CCN4', 1, ' ')
    endif
 
    if (history_aerosol .and. prog_modal_aero) then
@@ -300,7 +302,8 @@ end subroutine ndrop_init
 
 subroutine dropmixnuc( &
    state, ptend, dtmicro, pbuf, wsub, &
-   cldn, cldo, tendnd, factnum)
+   cldn, cldo, tendnd, factnum, &
+   ccn02_out) ! YQIN 10/20/22
 
    ! vertical diffusion and nucleation of cloud droplets
    ! assume cloud presence controlled by cloud fraction
@@ -323,6 +326,10 @@ subroutine dropmixnuc( &
    ! output arguments
    real(r8), intent(out) :: tendnd(pcols,pver) ! change in droplet number concentration (#/kg/s)
    real(r8), intent(out) :: factnum(:,:,:)     ! activation fraction for aerosol number
+
+   ! YQIN 10/20/22
+   real(r8), intent(out) :: ccn02_out(pcols,pver) ! CCN number concentration at S=0.2%
+
    !--------------------Local storage-------------------------------------
 
    integer  :: lchnk               ! chunk identifier
@@ -1100,6 +1107,10 @@ subroutine dropmixnuc( &
    do l = 1, psat
       call outfld(ccn_name(l), ccn(1,1,l), pcols, lchnk)
    enddo
+
+   ! YQIN 10/20/22
+   ccn02_out(:ncol,:) = ccn(:ncol,:,4)
+
 
    if(do_aerocom_ind3) then 
       ccn3d(:ncol, :) = ccn(:ncol, :, 4)

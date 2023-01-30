@@ -278,6 +278,7 @@ module cospsimulator_intr
   integer :: rei_idx, rel_idx
 
   ! YQIN 11/23/22
+  integer :: ccn02_idx, alba_idx, albc_idx, swcf_idx
   integer :: lts_idx, rh750_idx, eis_idx
  
   ! ######################################################################################
@@ -1145,13 +1146,41 @@ slwc_ncot_int = SLWC_NCOT
        ! YQIN 11/23/22 add PDF variables 
        do itype=1,N_CAT
        do ireg=1,N_REGIME
+           call addfld ( 'PDF_CLWm'//cats(itype)//regime(ireg),         (/'hist_cf'/),                  'A', '1', 'PDF of MODIS Liquid Cloud Fraction', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld ( 'PDF_LWPm'//cats(itype)//regime(ireg),         (/'hist_lnticlwp'/),            'A', '1', 'PDF of MODIS Liquid Water Path', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld ('PDF_CDNCm'//cats(itype)//regime(ireg),         (/'hist_lncdnc'/),              'A', '1', 'PDF of MODIS CDNC', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld ( 'PDF_RELm'//cats(itype)//regime(ireg),         (/'hist_rel'/),                 'A', '1', 'PDF of MODIS Liquid effective radius', flag_xyfill=.true., fill_value=R_UNDEF)
+    
+           call addfld (  'PDF_CCN_CDNCm'//cats(itype)//regime(ireg),    (/'hist_lnccn','hist_lncdnc'/),'A', '1', 'PDF of CCN and CDNC_MODIS', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (  'PDF_CDNC_RELm'//cats(itype)//regime(ireg),    (/'hist_lncdnc','hist_rel'/),  'A', '1', 'PDF of REL and CDNC_MODIS', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (  'PDF_CCN_CODAm'//cats(itype)//regime(ireg),    (/'hist_lnccn','hist_cod'/),   'A', '1', 'PDF of CCN and CODA_MODIS', flag_xyfill=.true., fill_value=R_UNDEF)
+
+
            call addfld (   'PDF_AI_CDNCm'//cats(itype)//regime(ireg),    (/'hist_lnai','hist_lncdnc'/), 'A', '1', 'joint histogram of AI and CDNC',    flag_xyfill=.true., fill_value=R_UNDEF)
            call addfld (   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'PDF in ND, LWP and CF space',       flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (  'ALBA_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'ALBA in ND, LWP and CF space', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (  'ALBC_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'ALBA in ND, LWP and CF space', flag_xyfill=.true., fill_value=R_UNDEF)
+           call addfld (  'CODA_NDLWPCFm'//cats(itype)//regime(ireg),    (/'hist_3d'/),                 'A', '1', 'CODA in ND, LWP and CF space', flag_xyfill=.true., fill_value=R_UNDEF)
+
+
+           call add_default ( 'PDF_CLWm'//cats(itype)//regime(ireg),        1, ' ') 
+           call add_default ( 'PDF_LWPm'//cats(itype)//regime(ireg),        1, ' ') 
+           call add_default ('PDF_CDNCm'//cats(itype)//regime(ireg),        1, ' ') 
+           call add_default ( 'PDF_RELm'//cats(itype)//regime(ireg),        1, ' ') 
+    
+           call add_default (  'PDF_CCN_CDNCm'//cats(itype)//regime(ireg),   1, ' ') 
+           call add_default (  'PDF_CDNC_RELm'//cats(itype)//regime(ireg),   1, ' ') 
+           call add_default (  'PDF_CCN_CODAm'//cats(itype)//regime(ireg),   1, ' ') 
+
 
            call add_default( 'PDF_AI_CDNCm'//cats(itype)//regime(ireg), 1, ' ')
            call add_default( 'PDF_NDLWPCFm'//cats(itype)//regime(ireg), 1, ' ')
-       end do ! itype
+           call add_default (  'ALBA_NDLWPCFm'//cats(itype)//regime(ireg),   1, ' ')
+           call add_default (  'ALBC_NDLWPCFm'//cats(itype)//regime(ireg),   1, ' ')
+           call add_default (  'CODA_NDLWPCFm'//cats(itype)//regime(ireg),   1, ' ')
+
        end do ! ireg
+       end do ! itype
 
 
        !! add MODIS output to history file specified by the CAM namelist variable cosp_histfile_num
@@ -1421,6 +1450,10 @@ slwc_ncot_int = SLWC_NCOT
     lsflxsnw_idx   = pbuf_get_index('LS_FLXSNW')
 
     ! YQIN 11/23/22
+    ccn02_idx      = pbuf_get_index('CCN02')
+    alba_idx       = pbuf_get_index('ALBA')
+    albc_idx       = pbuf_get_index('ALBC')
+    swcf_idx       = pbuf_get_index('SWCF')
     lts_idx        = pbuf_get_index('LTS')
     eis_idx        = pbuf_get_index('EIS')
     rh750_idx      = pbuf_get_index('RH750')
@@ -1690,6 +1723,10 @@ slwc_ncot_int = SLWC_NCOT
     real(r8), pointer, dimension(:,:) :: dp_cldice       ! deep gmb cloud ice water (kg/kg)
     
     ! YQIN 11/23/22
+    real(r8), pointer :: ccn02(:,:)
+    real(r8), pointer :: alba(:)
+    real(r8), pointer :: albc(:)
+    real(r8), pointer :: swcf(:)
     real(r8), pointer :: LTS(:)
     real(r8), pointer :: EIS(:)
     real(r8), pointer :: RH750(:)
@@ -1873,10 +1910,31 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: lwpmodis_h(pcols)
     real(r8) :: cdncmodis_h(pcols)
     real(r8) :: ai_h(pcols)
+    real(r8) :: ccn02_sfc_h(pcols)
+    real(r8) :: coda_h(pcols)
+
+    real(r8) :: pdf_clw (pcols,N_REGIME,ncf_hist_modis)
+    real(r8) :: pdf_lwp (pcols,N_REGIME,nwp_hist_modis)
+    real(r8) :: pdf_cdnc(pcols,N_REGIME,ncdnc_hist_modis)
+    real(r8) :: pdf_rel (pcols,N_REGIME,nrel_hist_modis)
+    real(r8) :: pdf_ccn_cdnc (pcols, N_REGIME, nccn_hist_modis, ncdnc_hist_modis)
+    real(r8) :: pdf_ccn_coda (pcols, N_REGIME, nccn_hist_modis, ncod_hist_modis)
+    real(r8) :: pdf_cdnc_rel (pcols, N_REGIME, ncdnc_hist_modis, nrel_hist_modis)
+
+
 
     real(r8) :: pdf_ai_cdnc (pcols, N_REGIME, nai_hist_modis, ncdnc_hist_modis)
     real(r8) :: pdf_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
     real(r8) :: pdf_NDLWPCF_out (pcols, n3ds)
+    real(r8) :: alba_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
+    real(r8) :: alba_NDLWPCF_out (pcols, n3ds)
+    real(r8) :: albc_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
+    real(r8) :: albc_NDLWPCF_out (pcols, n3ds)
+    real(r8) :: coda_NDLWPCF (pcols, N_REGIME, ncdnc_hist_modis, nwp_hist_modis, ncf_hist_modis)
+    real(r8) :: coda_NDLWPCF_out (pcols, n3ds)
+
+    ! grid-mean cloud optical depth 
+    real(r8) :: gmtauwmodis(pcols)
 
     integer :: j, l, lkj
     integer :: ireg, itype
@@ -2200,6 +2258,10 @@ slwc_ncot_int = SLWC_NCOT
     call pbuf_get_field(pbuf, lsflxsnw_idx, ls_flxsnw  )
    
     ! YQIN 11/23/22
+    call pbuf_get_field(pbuf, ccn02_idx,    ccn02)
+    call pbuf_get_field(pbuf, alba_idx,     alba)
+    call pbuf_get_field(pbuf, albc_idx,     albc)
+    call pbuf_get_field(pbuf, swcf_idx,     swcf)
     call pbuf_get_field(pbuf, lts_idx,      LTS)
     call pbuf_get_field(pbuf, eis_idx,      EIS)
     call pbuf_get_field(pbuf, rh750_idx,    RH750)
@@ -3236,10 +3298,23 @@ slwc_ncot_int = SLWC_NCOT
        call outfld('CLLWPMODIS'   ,clLWPmodis    ,pcols,lchnk)
        ! YQIN -- end 
 
+       ! ---------------------------------------------------------------------------------
+       ! get grid-mean cloud optical depth 
+       ! ---------------------------------------------------------------------------------
+       where ((tauwmodis(:ncol) .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
+          gmtauwmodis(:ncol) = R_UNDEF
+       elsewhere
+          !! weight by the cloud fraction clwmodis
+          gmtauwmodis(:ncol) = tauwmodis(:ncol)*clwmodis(:ncol)/100._r8 ! % -> fraction
+       end where
+
        ! YQIN 11/23/22
        clwmodis_h = R_UNDEF
+       reffclwmodis_h = R_UNDEF
        lwpmodis_h = R_UNDEF
        cdncmodis_h = R_UNDEF
+       ccn02_sfc_h = R_UNDEF
+       coda_h = R_UNDEF
 
        do itype=1,N_CAT
            if (itype.eq.1) then
@@ -3253,12 +3328,26 @@ slwc_ncot_int = SLWC_NCOT
                    cdncmodis_h(:ncol) = ndmodisic(:ncol)
                end where 
 
+
                where(ndmodisic(:ncol).eq.R_UNDEF .or. aerindex.eq.R_UNDEF)
                    ai_h(:ncol) = R_UNDEF
                elsewhere
                    ai_h(:ncol) = aerindex(:ncol)
                end where
 
+               where (reffclwmodis(:ncol) .eq. R_UNDEF) 
+                   reffclwmodis_h(:ncol) = R_UNDEF
+               elsewhere
+                   reffclwmodis_h(:ncol) = reffclwmodis(:ncol)*1.e6_r8 ! m --> micron
+               end where 
+
+               where (gmtauwmodis(:ncol) .eq. R_UNDEF)
+                   coda_h(:ncol) = R_UNDEF
+               elsewhere
+                   coda_h(:ncol) = gmtauwmodis(:ncol)
+               end where
+
+               ccn02_sfc_h(:ncol) = ccn02(:ncol,pver)
            else
                do i=1,ncol
                    if (iwpmodis(i) > 0._r8) then
@@ -3278,6 +3367,19 @@ slwc_ncot_int = SLWC_NCOT
                            ai_h(i) = 0._r8
                        end if
 
+                       if (reffclwmodis(i) .eq. R_UNDEF ) then
+                           reffclwmodis_h(i) = R_UNDEF 
+                       else
+                           reffclwmodis_h(i) = 0._r8
+                       end if
+
+                       if (gmtauwmodis(i) .eq. R_UNDEF) then
+                           coda_h(i) = R_UNDEF
+                       else
+                           coda_h(i) = 0._r8
+                       end if
+
+                       ccn02_sfc_h(i) = 0._r8
                    else
                        if (clNdmodis(i) .eq. R_UNDEF .or. lwpmodisi_nd(i) .eq. R_UNDEF .or. ndmodisic(i).eq.R_UNDEF) then
                            clwmodis_h(i) = R_UNDEF
@@ -3295,6 +3397,20 @@ slwc_ncot_int = SLWC_NCOT
                            ai_h(i) = aerindex(i)
                        end if
 
+                       if (reffclwmodis(i) .eq. R_UNDEF ) then
+                           reffclwmodis_h(i) = R_UNDEF 
+                       else
+                           reffclwmodis_h(i) = reffclwmodis(i)*1.e6_r8 ! m --> micron
+                       end if
+
+                       if (gmtauwmodis(i) .eq. R_UNDEF) then
+                           coda_h(i) = R_UNDEF
+                       else
+                           coda_h(i) = gmtauwmodis(i)
+                       end if
+
+                       ccn02_sfc_h(i) = ccn02(i,pver)
+
                    end if
                end do  ! i
            end if
@@ -3302,6 +3418,73 @@ slwc_ncot_int = SLWC_NCOT
            LTSin = EIS
            LTSin_threshold = EIS_threshold
 
+           ! CF PDF
+           call pdf1d_regime(R_UNDEF,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincf,&
+                     .false.,&
+                     clwmodis_h, &
+                     pdf_clw)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_CLWm'//cats(itype)//regime(ireg),          pdf_clw(:,ireg,:),    pcols, lchnk)
+           end do 
+    
+           ! REL PDF
+           call pdf1d_regime(R_UNDEF,nrel_hist_modis,relE_hist_modis_1d,N_REGIME,&
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,minrel,&
+                     .false.,&
+                     reffclwmodis_h, &
+                     pdf_rel)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_RELm'//cats(itype)//regime(ireg),          pdf_rel(:,ireg,:),    pcols, lchnk)
+           end do 
+   
+           ! LWP PDF 
+           call pdf1d_regime(R_UNDEF,nwp_hist_modis,wpE_hist_modis_1d,N_REGIME,&
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,minticlwp,&
+                     .true.,&
+                     lwpmodis_h, & 
+                     pdf_lwp)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_LWPm'//cats(itype)//regime(ireg),          pdf_lwp(:,ireg,:),    pcols, lchnk)
+           end do 
+   
+           ! CDNC PDF
+           call pdf1d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME,&
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,&
+                     .true.,&
+                     cdncmodis_h, & 
+                     pdf_cdnc)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_CDNCm'//cats(itype)//regime(ireg),          pdf_cdnc(:,ireg,:),    pcols, lchnk)
+           end do 
+    
+ 
+           ! ccn vs cdnc
+           call pdf2d_regime(R_UNDEF,nccn_hist_modis,ccnE_hist_modis_1d,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME, &
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn, mincdnc,&
+                     .true.,.true.,&
+                     ccn02_sfc_h,cdncmodis_h,&  ! surface CCN
+                     pdf_ccn_cdnc)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_CCN_CDNCm'//cats(itype)//regime(ireg),          pdf_ccn_cdnc(:,ireg,:,:),    pcols, lchnk)
+           end do 
+
+            ! cdnc and rel 
+           call pdf2d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nrel_hist_modis,relE_hist_modis_1d,N_REGIME, &
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minrel,&
+                     .true.,.false.,&
+                     cdncmodis_h,reffclwmodis_h,&
+                     pdf_cdnc_rel)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_CDNC_RELm'//cats(itype)//regime(ireg),          pdf_cdnc_rel(:,ireg,:,:),    pcols, lchnk)
+           end do 
+ 
            ! AI vs CDNC 
            call pdf2d_regime(R_UNDEF,nai_hist_modis,aiE_hist_modis_1d,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME, &
                      LTSin,RH750,LTSin_threshold,RH750_threshold,minai, mincdnc,&
@@ -3314,6 +3497,48 @@ slwc_ncot_int = SLWC_NCOT
            end do 
 
 
+           ! ccn vs coda
+           call pdf2d_regime(R_UNDEF,nccn_hist_modis,ccnE_hist_modis_1d,ncod_hist_modis,codE_hist_modis_1d,N_REGIME, &
+                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn, mincod,&
+                     .true.,.false.,&
+                     ccn02_sfc_h,coda_h,& 
+                     pdf_ccn_coda)
+    
+           do ireg = 1, N_REGIME
+               call outfld('PDF_CCN_CODAm'//cats(itype)//regime(ireg),          pdf_ccn_coda(:,ireg,:,:),    pcols, lchnk)
+           end do 
+
+           ! alba heatmap 
+           call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
+                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       .true.,.true.,.false.,&
+                       cdncmodis_h,lwpmodis_h,clwmodis_h,&
+                       pdf_NDLWPCF, &
+                       alba, &
+                       alba_NDLWPCF &
+           )
+           
+           ! albc heatmap
+           call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
+                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       .true.,.true.,.false.,&
+                       cdncmodis_h,lwpmodis_h,clwmodis_h,&
+                       pdf_NDLWPCF, &
+                       albc, &
+                       albc_NDLWPCF &
+           )
+    
+           ! coda heatmap
+           call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
+                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       .true.,.true.,.false.,&
+                       cdncmodis_h,lwpmodis_h,clwmodis_h,&
+                       pdf_NDLWPCF, &
+                       gmtauwmodis, &
+                       coda_NDLWPCF &
+           )
+
+           ! only 3-D PDF
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
                        LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
                        .true.,.true.,.false.,&
@@ -3322,6 +3547,9 @@ slwc_ncot_int = SLWC_NCOT
            )
 
            pdf_NDLWPCF_out = 0._r8
+           alba_NDLWPCF_out = R_UNDEF 
+           albc_NDLWPCF_out = R_UNDEF
+           coda_NDLWPCF_out = R_UNDEF 
            do ireg = 1,N_REGIME
                do i = 1,ncol
                    do l = 1,ncf_hist_modis
@@ -3330,12 +3558,18 @@ slwc_ncot_int = SLWC_NCOT
                        lkj = (l-1)*nwp_hist_modis*ncdnc_hist_modis+(k-1)*ncdnc_hist_modis+j
                    
                        pdf_NDLWPCF_out(i,lkj) = pdf_NDLWPCF(i,ireg,j,k,l)
+                       alba_NDLWPCF_out(i,lkj) = alba_NDLWPCF(i,ireg,j,k,l)
+                       albc_NDLWPCF_out(i,lkj) = albc_NDLWPCF(i,ireg,j,k,l)
+                       coda_NDLWPCF_out(i,lkj) = coda_NDLWPCF(i,ireg,j,k,l)
                    end do ! j
                    end do ! k
                    end do ! l
                end do ! i
     
                call outfld(   'PDF_NDLWPCFm'//cats(itype)//regime(ireg),           pdf_NDLWPCF_out, pcols, lchnk)
+               call outfld(  'ALBA_NDLWPCFm'//cats(itype)//regime(ireg),          alba_NDLWPCF_out, pcols, lchnk)
+               call outfld(  'ALBC_NDLWPCFm'//cats(itype)//regime(ireg),          albc_NDLWPCF_out, pcols, lchnk)
+               call outfld(  'CODA_NDLWPCFm'//cats(itype)//regime(ireg),          coda_NDLWPCF_out, pcols, lchnk)
            end do ! ireg
        end do ! itype 
        ! =============================================================================================================

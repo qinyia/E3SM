@@ -31,6 +31,47 @@ use cam_logfile,     only: iulog
 use rad_constituents, only: N_DIAG, rad_cnst_get_call_list, rad_cnst_get_info
 use radconstants,     only: rrtmg_sw_cloudsim_band, rrtmg_lw_cloudsim_band, nswbands, nlwbands
 
+! YQIN 12/07/22
+  use micro_mg_utils, only: qsmall,mincld
+  use cdiag_pdf,    only: pdf1d_regime, pdf2d_regime, pdf2dp_regime,pdf3d_regime,&
+       ncfs, &
+       mcfs, &
+       bcfs_1d, &
+       bcfs, &
+       nlnticlwps, & 
+       mlnticlwps, & 
+       blnticlwps_1d, &
+       blnticlwps, &
+       nlncdncs, &
+       mlncdncs, &
+       blncdncs_1d, &
+       blncdncs, &
+       nrels, &
+       mrels, &
+       brels_1d, &
+       brels, &
+       nlnccns, &
+       mlnccns, &
+       blnccns_1d, &
+       blnccns, &
+       n3ds, &
+       m3ds, &
+       b3ds_1d, &
+       b3ds, &
+       N_REGIME, &
+       regime, &
+       N_CAT, &
+       cats, &
+       LTS_threshold, &
+       EIS_threshold, &
+       RH750_threshold, &
+       ncods, &
+       mcods, &
+       bcods_1d, &
+       bcods, &
+       minccn, mincdnc, minticlwp, mincf, minrel,mincod
+
+
 implicit none
 private
 save
@@ -60,6 +101,15 @@ integer :: ld_idx       = 0
 integer :: cldfsnow_idx = 0 
 integer :: cld_idx      = 0 
 integer :: concld_idx   = 0
+
+! YQIN 10/20/22
+integer :: alba_idx     = 0
+integer :: swcf_idx     = 0
+integer :: albc_idx     = 0
+
+! YQIN 12/07/22
+integer :: ccn02_idx, cdnumc_avg_idx, ticlwp_idx, cllow_idx, ticiwp_idx
+integer :: lts_idx, rh750_idx, eis_idx
 
 ! Default values for namelist variables
 
@@ -173,6 +223,12 @@ end subroutine radiation_readnl
 
     call pbuf_add_field('QRS' , 'global',dtype_r8,(/pcols,pver/), qrs_idx) ! shortwave radiative heating rate 
     call pbuf_add_field('QRL' , 'global',dtype_r8,(/pcols,pver/), qrl_idx) ! longwave  radiative heating rate 
+
+    ! YQIN 10/20/22
+    call pbuf_add_field('ALBA',  'global',dtype_r8,(/pcols/), alba_idx)
+    call pbuf_add_field('SWCF',  'global',dtype_r8,(/pcols/), swcf_idx)
+    call pbuf_add_field('ALBC',  'global',dtype_r8,(/pcols/), albc_idx)
+
 
     ! If the namelist has been configured for preserving the spectral fluxes, then create
     ! physics buffer variables to store the results.
@@ -812,6 +868,16 @@ end function radiation_nextsw_cday
                                                        sampling_seq='rad_lwsw', flag_xyfill=.true.)
     endif
 
+    ! YQIN 12/07/22
+    ccn02_idx      = pbuf_get_index('CCN02')
+    cdnumc_avg_idx = pbuf_get_index('CDNUMC_AVG')
+    ticlwp_idx     = pbuf_get_index('TICLWP')
+    cllow_idx      = pbuf_get_index('CLLOW')
+    lts_idx        = pbuf_get_index('LTS')
+    eis_idx        = pbuf_get_index('EIS')
+    rh750_idx      = pbuf_get_index('RH750')
+    ticiwp_idx     = pbuf_get_index('TICIWP')
+
   end subroutine radiation_init
 
 !===============================================================================
@@ -923,7 +989,8 @@ end function radiation_nextsw_cday
     real(r8) :: cicewp(pcols,pver)             ! in-cloud cloud ice water path
     real(r8) :: cliqwp(pcols,pver)             ! in-cloud cloud liquid water path
     real(r8) cltot(pcols)                      ! Diagnostic total cloud cover
-    real(r8) cllow(pcols)                      !       "     low  cloud cover
+    ! YQIN 12/07/22
+    !real(r8) cllow(pcols)                      !       "     low  cloud cover
     real(r8) clmed(pcols)                      !       "     mid  cloud cover
     real(r8) clhgh(pcols)                      !       "     hgh  cloud cover
     real(r8) :: ftem(pcols,pver)              ! Temporary workspace for outfld variables
@@ -981,6 +1048,16 @@ end function radiation_nextsw_cday
     real(r8) :: qrsc(pcols,pver)                  ! clearsky shortwave radiative heating rate 
     real(r8) :: qrlc(pcols,pver)                  ! clearsky longwave  radiative heating rate 
 
+    ! YQIN 10/20/22
+    real(r8), pointer, dimension(:)   :: alba     ! albedo = fsut/solin
+    real(r8), pointer, dimension(:)   :: albc     ! cloud albedo = (fsut-fsutc)/solin
+
+    real(r8) :: codp(pcols,pver) ! grid-mean cloud optical depth
+    real(r8) :: taup(pcols,pver) ! in-cloud optical depth
+    real(r8) :: cod(pcols)
+    real(r8) :: tau(pcols) 
+
+
     integer lchnk, ncol, lw
     real(r8) :: calday                        ! current calendar day
     real(r8) :: clat(pcols)                   ! current latitudes(radians)
@@ -1005,7 +1082,10 @@ end function radiation_nextsw_cday
     real(r8) fsdsc(pcols)         ! Clear sky surface downwelling solar flux
     real(r8) flut(pcols)          ! Upward flux at top of model
     real(r8) lwcf(pcols)          ! longwave cloud forcing
-    real(r8) swcf(pcols)          ! shortwave cloud forcing
+    ! YQIN 10/26/22
+    !real(r8) swcf(pcols)          ! shortwave cloud forcing
+    real(r8), pointer, dimension(:) :: swcf 
+
     real(r8) flutc(pcols)         ! Upward Clear Sky flux at top of model
     real(r8) flntc(pcols)         ! Clear sky lw flux at model top
     real(r8) flnsc(pcols)         ! Clear sky lw flux at srf (up-down)
@@ -1064,6 +1144,46 @@ end function radiation_nextsw_cday
     real(r8) ::  aerindex(pcols)      ! Aerosol index
     integer aod400_idx, aod700_idx, cld_tau_idx
 
+    ! YQIN 12/07/22
+    real(r8), pointer :: ccn02(:,:)
+    real(r8), pointer :: cdnumc_avg(:)
+    real(r8), pointer :: ticlwp(:)
+    real(r8), pointer :: cllow(:)
+    real(r8), pointer :: LTS(:)
+    real(r8), pointer :: EIS(:)
+    real(r8), pointer :: RH750(:)
+    real(r8), pointer :: ticiwp(:)
+
+    real(r8) :: LTSin(pcols), LTSin_threshold
+
+    real(r8) :: cllow_h(pcols)
+    real(r8) :: ccn02_sfc_h(pcols)
+    real(r8) :: cdnumc_avg_h(pcols)
+    real(r8) :: ticlwp_h(pcols)
+    real(r8) :: cod_h(pcols)
+
+    ! YQIN 12/19/22
+    real(r8) :: pdfr_NDLWPCF (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: pdfr_NDLWPCF_out (pcols,n3ds)
+    real(r8) :: alba_NDLWPCF (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: alba_NDLWPCF_out (pcols,n3ds)
+    real(r8) :: albc_NDLWPCF (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: albc_NDLWPCF_out (pcols,n3ds)
+    real(r8) :: coda_NDLWPCF (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: coda_NDLWPCF_out (pcols,n3ds)
+
+    real(r8) :: pdfr_NDLWPCFp (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: pdfr_NDLWPCFp_out (pcols,n3ds)
+    real(r8) :: coda_NDLWPCFp (pcols,N_REGIME,nlncdncs,nlnticlwps,ncfs)
+    real(r8) :: coda_NDLWPCFp_out (pcols,n3ds)
+
+    real(r8) :: pdfr_lnccn_alba(pcols,N_REGIME,nlnccns,ncfs)
+    real(r8) :: pdfr_lnccn_albc(pcols,N_REGIME,nlnccns,ncfs)
+    real(r8) :: pdfr_lnccn_coda(pcols,N_REGIME,nlnccns,ncods)
+
+    integer :: ireg, itype
+    integer :: j,l,lkj
+
 
     character(*), parameter :: name = 'radiation_tend'
 !----------------------------------------------------------------------
@@ -1094,6 +1214,12 @@ end function radiation_nextsw_cday
     call pbuf_get_field(pbuf, qrs_idx,      qrs)
     call pbuf_get_field(pbuf, qrl_idx,      qrl)
 
+    ! YQIN 10/20/22
+    call pbuf_get_field(pbuf, alba_idx,     alba)
+    call pbuf_get_field(pbuf, swcf_idx,     swcf)
+    call pbuf_get_field(pbuf, albc_idx,     albc)
+
+
     if (spectralflux) then
       call pbuf_get_field(pbuf, su_idx, su)
       call pbuf_get_field(pbuf, sd_idx, sd)
@@ -1104,6 +1230,16 @@ end function radiation_nextsw_cday
     if (do_aerocom_ind3) then
       cld_tau_idx = pbuf_get_index('cld_tau')
     end if
+   
+    ! YQIN 12/07/22
+    call pbuf_get_field(pbuf, ccn02_idx,      ccn02)
+    call pbuf_get_field(pbuf, cdnumc_avg_idx, cdnumc_avg)
+    call pbuf_get_field(pbuf, ticlwp_idx,     ticlwp)
+    call pbuf_get_field(pbuf, cllow_idx,      cllow)
+    call pbuf_get_field(pbuf, lts_idx,        LTS)
+    call pbuf_get_field(pbuf, eis_idx,        EIS)
+    call pbuf_get_field(pbuf, rh750_idx,      RH750)
+    call pbuf_get_field(pbuf, ticiwp_idx,     ticiwp)
    
 !  For CRM, make cloud equal to input observations:
     if (single_column.and.scm_crm_mode.and.have_cld) then
@@ -1334,6 +1470,158 @@ end function radiation_nextsw_cday
                      swcf(i)=fsntoa(i) - fsntoac(i)
                      fsutoac(i) = solin(i) - fsntoac(i)
                   end do
+
+                  ! YQIN 10/20/22
+                  do i=1,ncol
+                     if (solin(i) .eq. 0._r8) then
+                        alba(i) = fillvalue
+                        albc(i) = fillvalue 
+                     else
+                        alba(i) = min(max(fsutoa(i)/solin(i),0._r8),1._r8)
+                        albc(i) = min(max(-1._r8*swcf(i)/solin(i),0._r8),1._r8)
+                     end if
+
+                  end do
+
+                  do i = 1, Nnite
+                      alba(IdxNite(i))   = fillvalue
+                      albc(IdxNite(i))   = fillvalue
+                  end do
+
+                  ! multiply by total cloud fraction to get gridbox value
+                  codp(:ncol,:) = c_cld_tau(idx_sw_diag,:ncol,:)*cldfprime(:ncol,:)
+                  taup(:ncol,:) = c_cld_tau(idx_sw_diag,:ncol,:)
+                  ! vertically-integrated TAU and COD
+                  cod(:ncol) = sum(codp(:ncol,:),dim=2)
+                  tau(:ncol) = sum(taup(:ncol,:),dim=2)
+
+                  ! YQIN 12/17/22
+                  do itype = 1, N_CAT
+                      if (itype.eq.1)then ! all clouds
+                          cllow_h = cllow
+                          ccn02_sfc_h = ccn02(:,pver)
+                          cdnumc_avg_h = cdnumc_avg 
+                          ticlwp_h = ticlwp
+                          cod_h = cod
+                      else
+                          do i=1,pcols
+                              if (ticiwp(i)>qsmall*1.e3_r8) then ! columns with ice water 
+                                  cllow_h(i) = 0._r8
+                                  ccn02_sfc_h(i) = 0._r8
+                                  cdnumc_avg_h(i) = 0._r8
+                                  ticlwp_h(i) = 0._r8
+                                  cod_h(i) = 0._r8
+                              else
+                                  cllow_h(i)  = cllow(i)
+                                  ccn02_sfc_h(i) = ccn02(i,pver)
+                                  cdnumc_avg_h(i) = cdnumc_avg(i)
+                                  ticlwp_h(i) = ticlwp(i)
+                                  cod_h(i) = cod(i)
+                              end if
+                          end do ! i
+                      end if
+
+                      LTSin = EIS
+                      LTSin_threshold = EIS_threshold
+
+                      ! 2-D histogram of CCN and ALBA
+                      call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncfs,bcfs_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincf,&
+                                  .true.,.false.,&
+                                  ccn02_sfc_h,alba,&
+                                  pdfr_lnccn_alba)
+
+                      if(icall.eq.0) then
+                        do ireg=1,N_REGIME
+                            call outfld('PDFR_lnCCN_ALBA'//cats(itype)//regime(ireg),          pdfr_lnccn_alba(:,ireg,:,:), pcols, lchnk)
+                        end do ! ireg
+                      end if 
+
+                      ! 2-D histogram of CCN and ALBC
+                      call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncfs,bcfs_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincf,&
+                                  .true.,.false.,&
+                                  ccn02_sfc_h,albc,&
+                                  pdfr_lnccn_albc)
+
+                      if(icall.eq.0) then
+                        do ireg=1,N_REGIME
+                            call outfld('PDFR_lnCCN_ALBC'//cats(itype)//regime(ireg),          pdfr_lnccn_albc(:,ireg,:,:), pcols, lchnk)
+                        end do ! ireg
+                      end if 
+
+                      ! 2-D histogram of CCN and CODA
+                      call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncods,bcods_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincod,& 
+                                  .true.,.false.,&
+                                  ccn02_sfc_h,cod_h,&
+                                  pdfr_lnccn_coda)
+
+                      if(icall.eq.0) then
+                        do ireg=1,N_REGIME
+                            call outfld('PDFR_lnCCN_CODA'//cats(itype)//regime(ireg),          pdfr_lnccn_coda(:,ireg,:,:), pcols, lchnk)
+                        end do ! ireg
+                      end if 
+
+                      ! unified 3-D histogram and ALBA heatmap 
+                      call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  .true.,.true.,.false.,&
+                                  cdnumc_avg_h,ticlwp_h,cllow_h,&
+                                  pdfr_NDLWPCF, &
+                                  alba, &
+                                  alba_NDLWPCF &
+                      )
+                      ! ALBC heatmap 
+                      call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  .true.,.true.,.false.,&
+                                  cdnumc_avg_h,ticlwp_h,cllow_h,&
+                                  pdfr_NDLWPCF, &
+                                  albc, &
+                                  albc_NDLWPCF &
+                      )
+                      ! CODA heatmap 
+                      call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
+                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  .true.,.true.,.false.,&
+                                  cdnumc_avg_h,ticlwp_h,cllow_h,&
+                                  pdfr_NDLWPCF, &
+                                  cod, &
+                                  coda_NDLWPCF &
+                      )
+
+                      if(icall.eq.0) then
+                          pdfr_NDLWPCF_out = 0._r8
+                          alba_NDLWPCF_out = fillvalue
+                          albc_NDLWPCF_out = fillvalue
+                          coda_NDLWPCF_out = fillvalue
+                          do ireg = 1,N_REGIME
+                              do i = 1,ncol
+                                  do l = 1,ncfs
+                                  do k = 1,nlnticlwps
+                                  do j = 1,nlncdncs
+                                      lkj = (l-1)*nlnticlwps*nlncdncs+(k-1)*nlncdncs+j
+                                  
+                                      pdfr_NDLWPCF_out(i,lkj) = pdfr_NDLWPCF(i,ireg,j,k,l)
+                                      alba_NDLWPCF_out(i,lkj) = alba_NDLWPCF(i,ireg,j,k,l)
+                                      albc_NDLWPCF_out(i,lkj) = albc_NDLWPCF(i,ireg,j,k,l)
+                                      coda_NDLWPCF_out(i,lkj) = coda_NDLWPCF(i,ireg,j,k,l)
+                                  end do ! j
+                                  end do ! k
+                                  end do ! l
+                              end do ! i
+
+                              call outfld('PDFR_NDLWPCF'//cats(itype)//regime(ireg),          pdfr_NDLWPCF_out, pcols, lchnk)
+                              call outfld('ALBA_NDLWPCF'//cats(itype)//regime(ireg),          alba_NDLWPCF_out, pcols, lchnk)
+                              call outfld('ALBC_NDLWPCF'//cats(itype)//regime(ireg),          albc_NDLWPCF_out, pcols, lchnk)
+                              call outfld('CODA_NDLWPCF'//cats(itype)//regime(ireg),          coda_NDLWPCF_out, pcols, lchnk)
+                          end do ! ireg
+                      end if
+
+                  end do ! itype 
+                  ! =============================================================================
+
 
                   if(do_aerocom_ind3) then
                     aerindex = 0.0
