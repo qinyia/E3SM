@@ -79,7 +79,7 @@ module cospsimulator_intr
        b3ds, &
        minccn, mincdnc, minticlwp, mincf, minrel, mincod,minai,&
        LTS_threshold, &
-       EIS_threshold, &
+       EIS_threshold_dry, EIS_threshold_wet,&
        RH750_threshold
 
   use cam_history_support, only: fillvalue
@@ -1071,10 +1071,14 @@ slwc_ncot_int = SLWC_NCOT
        call addfld ('CLTMODIS',horiz_only,'A','%','MODIS Total Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clwmodis ( time, loc )
        call addfld ('CLWMODIS',horiz_only,'A','%','MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
-       call addfld ('CLWMODISIC',horiz_only,'A','%','In-cloud MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
-
        ! float climodis ( time, loc )
        call addfld ('CLIMODIS',horiz_only,'A','%','MODIS Ice Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float cltmodisic ( time, loc )
+       call addfld ('CLTMODISIC',horiz_only,'A','%','In-cloud MODIS Total Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF) ! Yuying
+       ! float clwmodisic ( time, loc )
+       call addfld ('CLWMODISIC',horiz_only,'A','%','In-cloud MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float climodisic ( time, loc )
+       call addfld ('CLIMODISIC',horiz_only,'A','%','In-cloud MODIS Ice Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clhmodis ( time, loc )
        call addfld ('CLHMODIS',horiz_only,'A','%','MODIS High Level Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clmmodis ( time, loc )
@@ -1186,8 +1190,10 @@ slwc_ncot_int = SLWC_NCOT
        !! add MODIS output to history file specified by the CAM namelist variable cosp_histfile_num
        call add_default ('CLTMODIS',cosp_histfile_num,' ')
        call add_default ('CLWMODIS',cosp_histfile_num,' ')
-       call add_default ('CLWMODISIC',cosp_histfile_num,' ')
        call add_default ('CLIMODIS',cosp_histfile_num,' ')
+       call add_default ('CLTMODISIC',cosp_histfile_num,' ') ! Yuying
+       call add_default ('CLWMODISIC',cosp_histfile_num,' ')
+       call add_default ('CLIMODISIC',cosp_histfile_num,' ')
        call add_default ('CLHMODIS',cosp_histfile_num,' ')
        call add_default ('CLMMODIS',cosp_histfile_num,' ')
        call add_default ('CLLMODIS',cosp_histfile_num,' ')
@@ -1633,7 +1639,7 @@ slwc_ncot_int = SLWC_NCOT
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
 !    integer, parameter :: nf_modis=20                    ! number of modis outputs
-    integer, parameter :: nf_modis=31                    ! number of modis outputs ! YQIN
+    integer, parameter :: nf_modis=33                    ! number of modis outputs ! YQIN
    
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1669,7 +1675,7 @@ slwc_ncot_int = SLWC_NCOT
     ! MODIS outputs
     character(len=max_fieldname_len),dimension(nf_modis) :: &
          fname_modis=(/'CLTMODIS    ','CLWMODIS    ','CLIMODIS    ','CLHMODIS    ','CLMMODIS    ',&
-                       'CLWMODISIC  ', &
+                       'CLTMODISIC  ','CLWMODISIC  ','CLIMODISIC ',& ! Yuying
                        'CLLMODIS    ','TAUTMODIS   ','TAUWMODIS   ','TAUIMODIS   ','TAUTLOGMODIS',&
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ', &
@@ -1731,7 +1737,7 @@ slwc_ncot_int = SLWC_NCOT
     real(r8), pointer :: EIS(:)
     real(r8), pointer :: RH750(:)
 
-    real(r8) :: LTSin(pcols), LTSin_threshold
+    real(r8) :: LTSin(pcols), LTSin_threshold_dry, LTSin_threshold_wet
  
     ! Output CAM variables
     ! Notes:
@@ -1827,8 +1833,10 @@ slwc_ncot_int = SLWC_NCOT
     real(r8) :: scops_out(pcols,nhtml_cosp*nscol_cosp)   ! CAM frac_out (time,height_mlev,column,profile)
     real(r8) :: cltmodis(pcols)
     real(r8) :: clwmodis(pcols)
-    real(r8) :: clwmodisic(pcols)
     real(r8) :: climodis(pcols)
+    real(r8) :: cltmodisic(pcols) ! Yuying
+    real(r8) :: clwmodisic(pcols)
+    real(r8) :: climodisic(pcols)
     real(r8) :: clhmodis(pcols)
     real(r8) :: clmmodis(pcols)
     real(r8) :: cllmodis(pcols)
@@ -2085,8 +2093,10 @@ slwc_ncot_int = SLWC_NCOT
     scops_out(1:pcols,1:nhtml_cosp*nscol_cosp)       = R_UNDEF
     cltmodis(1:pcols)                                = R_UNDEF
     clwmodis(1:pcols)                                = R_UNDEF
-    clwmodisic(1:pcols)                              = R_UNDEF
     climodis(1:pcols)                                = R_UNDEF
+    cltmodisic(1:pcols)                              = R_UNDEF ! Yuying
+    clwmodisic(1:pcols)                              = R_UNDEF
+    climodisic(1:pcols)                              = R_UNDEF
     clhmodis(1:pcols)                                = R_UNDEF
     clmmodis(1:pcols)                                = R_UNDEF
     cllmodis(1:pcols)                                = R_UNDEF
@@ -3416,11 +3426,12 @@ slwc_ncot_int = SLWC_NCOT
            end if
 
            LTSin = EIS
-           LTSin_threshold = EIS_threshold
+           LTSin_threshold_dry = EIS_threshold_dry
+           LTSin_threshold_wet = EIS_threshold_wet
 
            ! CF PDF
            call pdf1d_regime(R_UNDEF,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincf,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincf,&
                      .false.,&
                      clwmodis_h, &
                      pdf_clw)
@@ -3431,7 +3442,7 @@ slwc_ncot_int = SLWC_NCOT
     
            ! REL PDF
            call pdf1d_regime(R_UNDEF,nrel_hist_modis,relE_hist_modis_1d,N_REGIME,&
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,minrel,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minrel,&
                      .false.,&
                      reffclwmodis_h, &
                      pdf_rel)
@@ -3442,7 +3453,7 @@ slwc_ncot_int = SLWC_NCOT
    
            ! LWP PDF 
            call pdf1d_regime(R_UNDEF,nwp_hist_modis,wpE_hist_modis_1d,N_REGIME,&
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,minticlwp,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minticlwp,&
                      .true.,&
                      lwpmodis_h, & 
                      pdf_lwp)
@@ -3453,7 +3464,7 @@ slwc_ncot_int = SLWC_NCOT
    
            ! CDNC PDF
            call pdf1d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME,&
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,&
                      .true.,&
                      cdncmodis_h, & 
                      pdf_cdnc)
@@ -3465,7 +3476,7 @@ slwc_ncot_int = SLWC_NCOT
  
            ! ccn vs cdnc
            call pdf2d_regime(R_UNDEF,nccn_hist_modis,ccnE_hist_modis_1d,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME, &
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn, mincdnc,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn, mincdnc,&
                      .true.,.true.,&
                      ccn02_sfc_h,cdncmodis_h,&  ! surface CCN
                      pdf_ccn_cdnc)
@@ -3476,7 +3487,7 @@ slwc_ncot_int = SLWC_NCOT
 
             ! cdnc and rel 
            call pdf2d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nrel_hist_modis,relE_hist_modis_1d,N_REGIME, &
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minrel,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minrel,&
                      .true.,.false.,&
                      cdncmodis_h,reffclwmodis_h,&
                      pdf_cdnc_rel)
@@ -3487,7 +3498,7 @@ slwc_ncot_int = SLWC_NCOT
  
            ! AI vs CDNC 
            call pdf2d_regime(R_UNDEF,nai_hist_modis,aiE_hist_modis_1d,ncdnc_hist_modis,cdncE_hist_modis_1d,N_REGIME, &
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,minai, mincdnc,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minai, mincdnc,&
                      .true.,.true.,&
                      ai_h,cdncmodis_h,&  ! aerosol index
                      pdf_ai_cdnc)
@@ -3499,7 +3510,7 @@ slwc_ncot_int = SLWC_NCOT
 
            ! ccn vs coda
            call pdf2d_regime(R_UNDEF,nccn_hist_modis,ccnE_hist_modis_1d,ncod_hist_modis,codE_hist_modis_1d,N_REGIME, &
-                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn, mincod,&
+                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn, mincod,&
                      .true.,.false.,&
                      ccn02_sfc_h,coda_h,& 
                      pdf_ccn_coda)
@@ -3510,7 +3521,7 @@ slwc_ncot_int = SLWC_NCOT
 
            ! alba heatmap 
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
-                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                        .true.,.true.,.false.,&
                        cdncmodis_h,lwpmodis_h,clwmodis_h,&
                        pdf_NDLWPCF, &
@@ -3520,7 +3531,7 @@ slwc_ncot_int = SLWC_NCOT
            
            ! albc heatmap
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
-                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                        .true.,.true.,.false.,&
                        cdncmodis_h,lwpmodis_h,clwmodis_h,&
                        pdf_NDLWPCF, &
@@ -3530,7 +3541,7 @@ slwc_ncot_int = SLWC_NCOT
     
            ! coda heatmap
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
-                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                        .true.,.true.,.false.,&
                        cdncmodis_h,lwpmodis_h,clwmodis_h,&
                        pdf_NDLWPCF, &
@@ -3540,7 +3551,7 @@ slwc_ncot_int = SLWC_NCOT
 
            ! only 3-D PDF
            call pdf3d_regime(R_UNDEF,ncdnc_hist_modis,cdncE_hist_modis_1d,nwp_hist_modis,wpE_hist_modis_1d,ncf_hist_modis,cfE_hist_modis_1d,N_REGIME,&
-                       LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                       LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                        .true.,.true.,.false.,&
                        cdncmodis_h,lwpmodis_h,clwmodis_h,&
                        pdf_NDLWPCF &
@@ -3633,14 +3644,6 @@ slwc_ncot_int = SLWC_NCOT
        end where
        call outfld('REFFCLWMODIS',reffclwmodis    ,pcols,lchnk)
        
-       where (reffclwmodis(:ncol) .eq. R_UNDEF) 
-          clwmodisic(:ncol) = R_UNDEF
-       elsewhere
-          !! cloud fraction with retrieved reffclwmodis
-          clwmodisic(:ncol) = clwmodis(:ncol)
-       end where
-       call outfld('CLWMODISIC',clwmodisic   ,pcols,lchnk)
-
        where ((reffclimodis(:ncol)  .eq. R_UNDEF) .or. (climodis(:ncol) .eq. R_UNDEF))
           reffclimodis(:ncol) = R_UNDEF
        elsewhere
@@ -3659,6 +3662,30 @@ slwc_ncot_int = SLWC_NCOT
        end where
        call outfld('REFFMODISI',reffmodisi        ,pcols,lchnk)
        
+       where (reffclwmodis(:ncol) .eq. R_UNDEF) 
+          clwmodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved reffclwmodis
+          clwmodisic(:ncol) = clwmodis(:ncol)
+       end where
+       call outfld('CLWMODISIC',clwmodisic   ,pcols,lchnk) ! Yuying
+       
+       where (reffclimodis(:ncol)  .eq. R_UNDEF)
+          climodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved reffclimodis
+          climodisic(:ncol) = climodis(:ncol)
+       end where
+       call outfld('CLIMODISIC',climodisic    ,pcols,lchnk)
+
+       where (tautmodis(:ncol) .eq. R_UNDEF)
+          cltmodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved tautmodis
+          cltmodisic(:ncol) = cltmodis(:ncol)
+       end where
+       call outfld('CLTMODISIC',cltmodisic    ,pcols,lchnk)
+ 
        where ((pctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
           pctmodis(:ncol) = R_UNDEF
        elsewhere
@@ -3667,7 +3694,6 @@ slwc_ncot_int = SLWC_NCOT
        end where
        call outfld('PCTMODIS',pctmodis    ,pcols,lchnk)
        
-
        where ((lwpmodis(:ncol)  .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
           lwpmodis(:ncol) = R_UNDEF
        elsewhere

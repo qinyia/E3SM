@@ -101,7 +101,8 @@ module cdiag_pdf
 
    real(r8), parameter, public :: LTS_threshold = 18.5 !15 ! K
    real(r8), parameter, public :: RH750_threshold = 50 ! %
-   real(r8), parameter, public :: EIS_threshold = 1 !4 !5 !7 ! K
+   real(r8), parameter, public :: EIS_threshold_wet = 1 !4 !5 !7 ! K
+   real(r8), parameter, public :: EIS_threshold_dry = 4 !4 !5 !7 ! K
 
 contains
 
@@ -364,7 +365,7 @@ end subroutine cdiag_pdf_init
 ! -----------------------------------------------------------------------
 ! YQIN 12/13/22
 subroutine pdf1d_regime(undefvar,nbins,bvars_1d,N_REGIME,&
-                 LTS,RH750,LTS_threshold,RH750_threshold,varmin,&
+                 LTS,RH750,LTS_threshold_dry,LTS_threshold_wet,RH750_threshold,varmin,&
                  logvar,&
                  var,&
                  pdf_var,&
@@ -377,7 +378,8 @@ real(r8), intent(in) :: bvars_1d(nbins+1) ! bounds of bins
 integer,  intent(in) :: N_REGIME
 real(r8), intent(in) :: LTS(pcols)
 real(r8), intent(in) :: RH750(pcols)
-real(r8), intent(in) :: LTS_threshold
+real(r8), intent(in) :: LTS_threshold_dry
+real(r8), intent(in) :: LTS_threshold_wet
 real(r8), intent(in) :: RH750_threshold
 real(r8), intent(in) :: varmin  ! set the minimum of input variable
 logical, intent(in)  :: logvar ! flag to denote whether use the log or the linear bins
@@ -423,14 +425,14 @@ do k=1,nbins
         kk = 1
         idx = 1
         pdf_var(i,idx,kk) = 1._r8
-        if (LTS(i) .le. LTS_threshold) then
-            if (RH750(i) .le. RH750_threshold) then
+        if (RH750(i) .le. RH750_threshold) then
+            if (LTS(i) .le. LTS_threshold_dry) then
                 idx = 2
             else
                 idx = 3
             end if
         else
-            if (RH750(i) .le. RH750_threshold) then
+            if (LTS(i) .le. LTS_threshold_wet) then
                 idx = 4
             else
                 idx = 5
@@ -442,14 +444,14 @@ do k=1,nbins
         kk = k
         idx = 1
         pdf_var(i,idx,kk) = 1._r8
-        if (LTS(i) .le. LTS_threshold) then
-            if (RH750(i) .le. RH750_threshold) then
+        if (RH750(i) .le. RH750_threshold) then
+            if (LTS(i) .le. LTS_threshold_dry) then
                 idx = 2
             else
                 idx = 3
             end if
         else
-            if (RH750(i) .le. RH750_threshold) then
+            if (LTS(i) .le. LTS_threshold_wet) then
                 idx = 4
             else
                 idx = 5
@@ -483,14 +485,14 @@ if (present(varp))then
             idx = 1
             pdf_varp(i,idx,kk) = pdf_varp(i,idx,kk) + 1._r8
            
-            if (LTS(i) .le. LTS_threshold) then
-                if (RH750(i) .le. RH750_threshold) then
+            if (RH750(i) .le. RH750_threshold) then
+                if (LTS(i) .le. LTS_threshold_dry) then
                     idx = 2
                 else
                     idx = 3
                 end if
             else
-                if (RH750(i) .le. RH750_threshold) then
+                if (LTS(i) .le. LTS_threshold_wet) then
                     idx = 4
                 else
                     idx = 5
@@ -505,14 +507,14 @@ if (present(varp))then
                 idx = 1
                 pdf_varp(i,idx,kk) = pdf_varp(i,idx,kk) + 1._r8
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+               if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
@@ -530,7 +532,7 @@ end subroutine pdf1d_regime
 
 ! ---------------------------------------------------------------
 subroutine pdf2d_regime(undefvar,nbins1,bvars1_1d,nbins2,bvars2_1d,N_REGIME,&
-                 LTS,RH750,LTS_threshold,RH750_threshold,var1min,var2min,&
+                 LTS,RH750,LTS_threshold_dry,LTS_threshold_wet,RH750_threshold,var1min,var2min,&
                  logvar1,logvar2,&
                  var1,var2,&
                  pdf_var,&
@@ -547,7 +549,8 @@ real(r8), intent(in) :: bvars2_1d(nbins2+1) ! bounds of bins
 integer, intent(in) :: N_REGIME
 real(r8), intent(in) :: LTS(pcols) 
 real(r8), intent(in) :: RH750(pcols) 
-real(r8), intent(in) :: LTS_threshold
+real(r8), intent(in) :: LTS_threshold_dry
+real(r8), intent(in) :: LTS_threshold_wet
 real(r8), intent(in) :: RH750_threshold
 
 real(r8), intent(in) :: var1min  ! set the minimum of input variable
@@ -623,20 +626,19 @@ do i=1,pcols
                     heatmap_var3(i,idx,jj,kk) = var3(i)
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = var3(i)
@@ -653,20 +655,19 @@ do i=1,pcols
                     heatmap_var3(i,idx,jj,kk) = var3(i)
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = var3(i)
@@ -684,20 +685,19 @@ do i=1,pcols
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = var3(i)
                 end if
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = var3(i)
@@ -715,20 +715,19 @@ do i=1,pcols
                     heatmap_var3(i,idx,jj,kk) = var3(i)
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = var3(i)
@@ -747,7 +746,7 @@ end subroutine pdf2d_regime
 ! YQIN 12/17/22
 ! ---------------------------------------------------------------
 subroutine pdf3d_regime(undefvar,nbins1,bvars1_1d,nbins2,bvars2_1d,nbins3,bvars3_1d,N_REGIME,&
-                 LTS,RH750,LTS_threshold,RH750_threshold,var1min,var2min,var3min,&
+                 LTS,RH750,LTS_threshold_dry,LTS_threshold_wet,RH750_threshold,var1min,var2min,var3min,&
                  logvar1,logvar2,logvar3,&
                  var1,var2,var3,&
                  pdf_var,&
@@ -766,7 +765,8 @@ real(r8), intent(in) :: bvars3_1d(nbins3+1) ! bounds of bins
 integer, intent(in) :: N_REGIME
 real(r8), intent(in) :: LTS(pcols) 
 real(r8), intent(in) :: RH750(pcols) 
-real(r8), intent(in) :: LTS_threshold
+real(r8), intent(in) :: LTS_threshold_dry
+real(r8), intent(in) :: LTS_threshold_wet
 real(r8), intent(in) :: RH750_threshold
 
 real(r8), intent(in) :: var1min  ! set the minimum of input variable
@@ -858,20 +858,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
                         end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -888,20 +887,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
-                        end if ! RH750
+                        end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -921,20 +919,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
                         end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -952,20 +949,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
-                        end if ! RH750
+                        end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -987,20 +983,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
                         end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -1018,20 +1013,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
-                        end if ! RH750
+                        end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -1051,20 +1045,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
                         end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -1082,20 +1075,19 @@ do i=1,pcols
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
                     end if
 
-                    if (LTS(i) .le. LTS_threshold) then
-                        if (RH750(i) .le. RH750_threshold) then
+                    if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_dry) then
                             idx = 2
                         else
                             idx = 3
-                        end if ! RH750
+                        end if
                     else
-                        if (RH750(i) .le. RH750_threshold) then
+                        if (LTS(i) .le. LTS_threshold_wet) then
                             idx = 4
                         else
                             idx = 5
-                        end if ! RH
-                    end if ! LTS
-
+                        end if
+                    end if
                     pdf_var(i,idx,jj,kk,ll) = 1._r8
                     if (present(varout)) then
                         heatmap_varout(i,idx,jj,kk,ll) = varout(i)
@@ -1114,7 +1106,7 @@ end subroutine pdf3d_regime
 
 ! ---------------------------------------------------------------
 subroutine pdf2dp_regime(undefvar,nbins1,bvars1_1d,nbins2,bvars2_1d,N_REGIME,&
-                 LTS,RH750,LTS_threshold,RH750_threshold,var1min,var2min,&
+                 LTS,RH750,LTS_threshold_dry,LTS_threshold_wet,RH750_threshold,var1min,var2min,&
                  logvar1,logvar2,&
                  var1,var2,&
                  pdf_var,&
@@ -1132,7 +1124,8 @@ real(r8), intent(in) :: bvars2_1d(nbins2+1) ! bounds of bins
 integer,  intent(in) :: N_REGIME
 real(r8), intent(in) :: LTS(pcols) 
 real(r8), intent(in) :: RH750(pcols) 
-real(r8), intent(in) :: LTS_threshold
+real(r8), intent(in) :: LTS_threshold_dry
+real(r8), intent(in) :: LTS_threshold_wet
 real(r8), intent(in) :: RH750_threshold
 
 real(r8), intent(in) :: var1min  ! set the minimum of input variable
@@ -1212,14 +1205,14 @@ do p=1,pver
                     freq_var3(i,idx,jj,kk) = freq_var3(i,idx,jj,kk) + 1.0_r8
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
@@ -1247,20 +1240,19 @@ do p=1,pver
                     freq_var3(i,idx,jj,kk) = freq_var3(i,idx,jj,kk) + 1.0_r8
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = pdf_var(i,idx,jj,kk) + 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = heatmap_var3(i,idx,jj,kk) + var3(i,p)
@@ -1284,20 +1276,19 @@ do p=1,pver
                     freq_var3(i,idx,jj,kk) = freq_var3(i,idx,jj,kk) + 1.0_r8
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = pdf_var(i,idx,jj,kk) + 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = heatmap_var3(i,idx,jj,kk) + var3(i,p)
@@ -1324,20 +1315,19 @@ do p=1,pver
                     freq_var3(i,idx,jj,kk) = freq_var3(i,idx,jj,kk) + 1.0_r8
                 end if
 
-                if (LTS(i) .le. LTS_threshold) then
-                    if (RH750(i) .le. RH750_threshold) then
+                if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_dry) then
                         idx = 2
                     else
                         idx = 3
                     end if
                 else
-                    if (RH750(i) .le. RH750_threshold) then
+                    if (LTS(i) .le. LTS_threshold_wet) then
                         idx = 4
                     else
                         idx = 5
                     end if
                 end if
-
                 pdf_var(i,idx,jj,kk) = pdf_var(i,idx,jj,kk) + 1._r8
                 if (present(var3)) then
                     heatmap_var3(i,idx,jj,kk) = heatmap_var3(i,idx,jj,kk) + var3(i,p)

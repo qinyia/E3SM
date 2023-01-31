@@ -60,7 +60,7 @@ module cloud_diagnostics
    b3ds, &
    minccn, mincdnc, minticlwp, mincf, minrel, mincod,&
    LTS_threshold, &
-   EIS_threshold, &
+   EIS_threshold_dry, EIS_threshold_wet, &
    RH750_threshold
 
 
@@ -407,7 +407,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     real(r8), pointer :: EIS(:) ! K
     real(r8), pointer :: RH750(:) 
 
-    real(r8) :: LTSin(pcols), LTSin_threshold
+    real(r8) :: LTSin(pcols), LTSin_threshold_dry,LTSin_threshold_wet
 
     integer :: j,l,lkj
     integer :: ireg
@@ -727,12 +727,13 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
         end if
 
         LTSin = EIS
-        LTSin_threshold = EIS_threshold
+        LTSin_threshold_dry = EIS_threshold_dry
+        LTSin_threshold_wet = EIS_threshold_wet
 
         ! YQIN 10/23/22
         ! CF PDF 
         call pdf1d_regime(fillvalue,ncfs,bcfs_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,mincf,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincf,&
                     .false.,&
                     cllow_h,&
                     pdf_cf, &
@@ -746,7 +747,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
 
         ! REL PDF 
         call pdf1d_regime(fillvalue,nrels,brels_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,minrel,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minrel,&
                     .false.,&
                     trel_h,&
                     pdf_rel, &
@@ -760,7 +761,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
 
         ! lnCCN PDF
         call pdf1d_regime(fillvalue,nlnccns,blnccns_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,&
                     .true.,&
                     ccn02_sfc_h,&
                     pdf_lnccn, &
@@ -774,7 +775,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     
         ! lnCDNC PDF
         call pdf1d_regime(fillvalue,nlncdncs,blncdncs_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,&
                     .true.,&
                     cdnumc_avg_h,&
                     pdf_lncdnc,&
@@ -788,7 +789,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     
         ! lnCDNC925 PDF
         call pdf1d_regime(fillvalue,nlncdncs,blncdncs_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,&
                     .true.,&
                     cdnumc_925_h,&
                     pdf_lncdnc925 &
@@ -800,7 +801,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     
         ! lnTICLWP PDF 
         call pdf1d_regime(fillvalue,nlnticlwps,blnticlwps_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,minticlwp,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minticlwp,&
                     .true.,&
                     ticlwp_h,&
                     pdf_lnticlwp,&
@@ -814,7 +815,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     
         ! joint PDF of CCN and CDNC
         call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,nlncdncs,blncdncs_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincdnc,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincdnc,&
                     .true.,.true.,&
                     ccn02_sfc_h,cdnumc_avg_h,&
                     pdf_lnccn_lncdnc)
@@ -826,7 +827,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
    
         ! joint PDF of CDNC and REL
         call pdf2d_regime(fillvalue,nlncdncs,blncdncs_1d,nrels,brels_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minrel,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minrel,&
                     .true.,.false.,&
                     cdnumc_avg_h,trel_h,&
                     pdf_lncdnc_rel)
@@ -838,7 +839,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
 
         ! 3-D PDF of CDNC, LWP and CF
         call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
-                    LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                    LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                     .true.,.true.,.false.,&
                     cdnumc_avg_h,ticlwp_h,cllow_h,&
                     pdf_NDLWPCF &
@@ -862,7 +863,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
     
 !        ! 2D PDF of CCN and CDNC with level dimensions
 !        call pdf2dp_regime(fillvalue,nlnccns,blnccns_1d,nlncdncs,blncdncs_1d,N_REGIME,&
-!                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincdnc,&
+!                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincdnc,&
 !                     .true.,.true.,&
 !                     ccn02, icwnc,&
 !                     pdf_lnccnp_lncdncp &
@@ -873,7 +874,7 @@ subroutine cloud_diagnostics_calc(state,  pbuf)
 !    
 !        ! 2D PDF of CDNC and REL with level dimensions
 !        call pdf2dp_regime(fillvalue,nlncdncs,blncdncs_1d,nrels,brels_1d,N_REGIME,&
-!                     LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincdnc,&
+!                     LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincdnc,&
 !                     .true.,.false.,&
 !                     icwnc,rel,&
 !                     pdf_lncdncp_relp &

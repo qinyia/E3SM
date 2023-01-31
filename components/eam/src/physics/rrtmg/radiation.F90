@@ -63,7 +63,7 @@ use radconstants,     only: rrtmg_sw_cloudsim_band, rrtmg_lw_cloudsim_band, nswb
        N_CAT, &
        cats, &
        LTS_threshold, &
-       EIS_threshold, &
+       EIS_threshold_dry, EIS_threshold_wet,&
        RH750_threshold, &
        ncods, &
        mcods, &
@@ -1154,7 +1154,7 @@ end function radiation_nextsw_cday
     real(r8), pointer :: RH750(:)
     real(r8), pointer :: ticiwp(:)
 
-    real(r8) :: LTSin(pcols), LTSin_threshold
+    real(r8) :: LTSin(pcols), LTSin_threshold_dry,LTSin_threshold_wet
 
     real(r8) :: cllow_h(pcols)
     real(r8) :: ccn02_sfc_h(pcols)
@@ -1522,11 +1522,12 @@ end function radiation_nextsw_cday
                       end if
 
                       LTSin = EIS
-                      LTSin_threshold = EIS_threshold
+                      LTSin_threshold_dry = EIS_threshold_dry
+                      LTSin_threshold_wet = EIS_threshold_wet
 
                       ! 2-D histogram of CCN and ALBA
                       call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncfs,bcfs_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincf,&
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincf,&
                                   .true.,.false.,&
                                   ccn02_sfc_h,alba,&
                                   pdfr_lnccn_alba)
@@ -1539,7 +1540,7 @@ end function radiation_nextsw_cday
 
                       ! 2-D histogram of CCN and ALBC
                       call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncfs,bcfs_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincf,&
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincf,&
                                   .true.,.false.,&
                                   ccn02_sfc_h,albc,&
                                   pdfr_lnccn_albc)
@@ -1552,7 +1553,7 @@ end function radiation_nextsw_cday
 
                       ! 2-D histogram of CCN and CODA
                       call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncods,bcods_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,minccn,mincod,& 
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,minccn,mincod,& 
                                   .true.,.false.,&
                                   ccn02_sfc_h,cod_h,&
                                   pdfr_lnccn_coda)
@@ -1565,7 +1566,7 @@ end function radiation_nextsw_cday
 
                       ! unified 3-D histogram and ALBA heatmap 
                       call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                                   .true.,.true.,.false.,&
                                   cdnumc_avg_h,ticlwp_h,cllow_h,&
                                   pdfr_NDLWPCF, &
@@ -1574,7 +1575,7 @@ end function radiation_nextsw_cday
                       )
                       ! ALBC heatmap 
                       call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                                   .true.,.true.,.false.,&
                                   cdnumc_avg_h,ticlwp_h,cllow_h,&
                                   pdfr_NDLWPCF, &
@@ -1583,7 +1584,7 @@ end function radiation_nextsw_cday
                       )
                       ! CODA heatmap 
                       call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
-                                  LTSin,RH750,LTSin_threshold,RH750_threshold,mincdnc,minticlwp,mincf,&
+                                  LTSin,RH750,LTSin_threshold_dry,LTSin_threshold_wet,RH750_threshold,mincdnc,minticlwp,mincf,&
                                   .true.,.true.,.false.,&
                                   cdnumc_avg_h,ticlwp_h,cllow_h,&
                                   pdfr_NDLWPCF, &
