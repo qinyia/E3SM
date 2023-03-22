@@ -1472,6 +1472,8 @@ end function radiation_nextsw_cday
                   end do
 
                   ! YQIN 10/20/22
+                  if(icall.eq.0) then
+
                   do i=1,ncol
                      if (solin(i) .eq. 0._r8) then
                         alba(i) = fillvalue
@@ -1480,7 +1482,6 @@ end function radiation_nextsw_cday
                         alba(i) = min(max(fsutoa(i)/solin(i),0._r8),1._r8)
                         albc(i) = min(max(-1._r8*swcf(i)/solin(i),0._r8),1._r8)
                      end if
-
                   end do
 
                   do i = 1, Nnite
@@ -1532,11 +1533,9 @@ end function radiation_nextsw_cday
                                   ccn02_sfc_h,alba,&
                                   pdfr_lnccn_alba)
 
-                      if(icall.eq.0) then
-                        do ireg=1,N_REGIME
-                            call outfld('PDFR_lnCCN_ALBA'//cats(itype)//regime(ireg),          pdfr_lnccn_alba(:,ireg,:,:), pcols, lchnk)
-                        end do ! ireg
-                      end if 
+                      do ireg=1,N_REGIME
+                          call outfld('PDFR_lnCCN_ALBA'//cats(itype)//regime(ireg),          pdfr_lnccn_alba(:,ireg,:,:), pcols, lchnk)
+                      end do ! ireg
 
                       ! 2-D histogram of CCN and ALBC
                       call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncfs,bcfs_1d,N_REGIME,&
@@ -1545,11 +1544,9 @@ end function radiation_nextsw_cday
                                   ccn02_sfc_h,albc,&
                                   pdfr_lnccn_albc)
 
-                      if(icall.eq.0) then
-                        do ireg=1,N_REGIME
-                            call outfld('PDFR_lnCCN_ALBC'//cats(itype)//regime(ireg),          pdfr_lnccn_albc(:,ireg,:,:), pcols, lchnk)
-                        end do ! ireg
-                      end if 
+                      do ireg=1,N_REGIME
+                          call outfld('PDFR_lnCCN_ALBC'//cats(itype)//regime(ireg),          pdfr_lnccn_albc(:,ireg,:,:), pcols, lchnk)
+                      end do ! ireg
 
                       ! 2-D histogram of CCN and CODA
                       call pdf2d_regime(fillvalue,nlnccns,blnccns_1d,ncods,bcods_1d,N_REGIME,&
@@ -1558,11 +1555,9 @@ end function radiation_nextsw_cday
                                   ccn02_sfc_h,cod_h,&
                                   pdfr_lnccn_coda)
 
-                      if(icall.eq.0) then
-                        do ireg=1,N_REGIME
-                            call outfld('PDFR_lnCCN_CODA'//cats(itype)//regime(ireg),          pdfr_lnccn_coda(:,ireg,:,:), pcols, lchnk)
-                        end do ! ireg
-                      end if 
+                      do ireg=1,N_REGIME
+                          call outfld('PDFR_lnCCN_CODA'//cats(itype)//regime(ireg),          pdfr_lnccn_coda(:,ireg,:,:), pcols, lchnk)
+                      end do ! ireg
 
                       ! unified 3-D histogram and ALBA heatmap 
                       call pdf3d_regime(fillvalue,nlncdncs,blncdncs_1d,nlnticlwps,blnticlwps_1d,ncfs,bcfs_1d,N_REGIME,&
@@ -1592,35 +1587,35 @@ end function radiation_nextsw_cday
                                   coda_NDLWPCF &
                       )
 
-                      if(icall.eq.0) then
-                          pdfr_NDLWPCF_out = 0._r8
-                          alba_NDLWPCF_out = fillvalue
-                          albc_NDLWPCF_out = fillvalue
-                          coda_NDLWPCF_out = fillvalue
-                          do ireg = 1,N_REGIME
-                              do i = 1,ncol
-                                  do l = 1,ncfs
-                                  do k = 1,nlnticlwps
-                                  do j = 1,nlncdncs
-                                      lkj = (l-1)*nlnticlwps*nlncdncs+(k-1)*nlncdncs+j
-                                  
-                                      pdfr_NDLWPCF_out(i,lkj) = pdfr_NDLWPCF(i,ireg,j,k,l)
-                                      alba_NDLWPCF_out(i,lkj) = alba_NDLWPCF(i,ireg,j,k,l)
-                                      albc_NDLWPCF_out(i,lkj) = albc_NDLWPCF(i,ireg,j,k,l)
-                                      coda_NDLWPCF_out(i,lkj) = coda_NDLWPCF(i,ireg,j,k,l)
-                                  end do ! j
-                                  end do ! k
-                                  end do ! l
-                              end do ! i
+                      pdfr_NDLWPCF_out = 0._r8
+                      alba_NDLWPCF_out = fillvalue
+                      albc_NDLWPCF_out = fillvalue
+                      coda_NDLWPCF_out = fillvalue
+                      do ireg = 1,N_REGIME
+                          do i = 1,ncol
+                              do l = 1,ncfs
+                              do k = 1,nlnticlwps
+                              do j = 1,nlncdncs
+                                  lkj = (l-1)*nlnticlwps*nlncdncs+(k-1)*nlncdncs+j
+                              
+                                  pdfr_NDLWPCF_out(i,lkj) = pdfr_NDLWPCF(i,ireg,j,k,l)
+                                  alba_NDLWPCF_out(i,lkj) = alba_NDLWPCF(i,ireg,j,k,l)
+                                  albc_NDLWPCF_out(i,lkj) = albc_NDLWPCF(i,ireg,j,k,l)
+                                  coda_NDLWPCF_out(i,lkj) = coda_NDLWPCF(i,ireg,j,k,l)
+                              end do ! j
+                              end do ! k
+                              end do ! l
+                          end do ! i
 
-                              call outfld('PDFR_NDLWPCF'//cats(itype)//regime(ireg),          pdfr_NDLWPCF_out, pcols, lchnk)
-                              call outfld('ALBA_NDLWPCF'//cats(itype)//regime(ireg),          alba_NDLWPCF_out, pcols, lchnk)
-                              call outfld('ALBC_NDLWPCF'//cats(itype)//regime(ireg),          albc_NDLWPCF_out, pcols, lchnk)
-                              call outfld('CODA_NDLWPCF'//cats(itype)//regime(ireg),          coda_NDLWPCF_out, pcols, lchnk)
-                          end do ! ireg
-                      end if
+                          call outfld('PDFR_NDLWPCF'//cats(itype)//regime(ireg),          pdfr_NDLWPCF_out, pcols, lchnk)
+                          call outfld('ALBA_NDLWPCF'//cats(itype)//regime(ireg),          alba_NDLWPCF_out, pcols, lchnk)
+                          call outfld('ALBC_NDLWPCF'//cats(itype)//regime(ireg),          albc_NDLWPCF_out, pcols, lchnk)
+                          call outfld('CODA_NDLWPCF'//cats(itype)//regime(ireg),          coda_NDLWPCF_out, pcols, lchnk)
+                      end do ! ireg
 
                   end do ! itype 
+
+                  end if ! icall
                   ! =============================================================================
 
 
