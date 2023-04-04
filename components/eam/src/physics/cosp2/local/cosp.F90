@@ -282,6 +282,8 @@ MODULE MOD_COSP
           modis_Cloud_Top_Temperature_Total_Mean => null(),& ! L3 MODIS retrieved cloud top temperature ! YQIN  01/18/22
           modis_Cloud_Top_Nd_Total_Mean => null(),         & ! L3 MODIS retrieved cloud top Nd ! YQIN 01/18/22
           modis_Cloud_Top_LWP_Total_Mean => null(),        & ! L3 MODIS retrieved LWP (same sampling as Nd)  ! YQIN
+          modis_Cloud_Top_Tau_Total_Mean => null(),        & ! L3 MODIS retrieved Tau (same sampling as Nd)  ! YQIN
+          modis_Cloud_Top_Size_Total_Mean => null(),        & ! L3 MODIS retrieved Size (same sampling as Nd)  ! YQIN
           modis_Liquid_Water_Path_Mean => null(),          & ! L3 MODIS retrieved liquid water path
           modis_Ice_Water_Path_Mean => null()                ! L3 MODIS retrieved ice water path
      real(wp),pointer,dimension(:,:,:) ::  &
@@ -363,12 +365,14 @@ CONTAINS
          modisMeanTauLiquid, modisMeanTauIce, modisMeanLogTauTotal,             &
          modisMeanLogTauLiquid, modisMeanLogTauIce, modisMeanSizeLiquid,        &
          modisMeanSizeIce, modisMeanCloudTopPressure, &
-         modisMeanCloudTopTemperature, modisMeanCloudTopNd, modisMeanCloudTopLWP,& ! YQIN 01/18/22
+         modisMeanCloudTopTemperature, modisMeanCloudTopNd, modisMeanCloudTopLWP,& ! YQIN 01/18/23
+         modisMeanCloudTopTau, modisMeanCloudTopSize,   & ! YQIN 04/03/23
          modisMeanLiquidWaterPath, &
          radar_lidar_tcc, cloudsat_tcc, cloudsat_tcc2
     REAL(WP), dimension(:,:),allocatable  :: &
          modisRetrievedCloudTopPressure, &
          modisRetrievedCloudTopTemperature, modisRetrievedCloudTopNd, modisRetrievedCloudTopLWP, & ! YQIN
+         modisRetrievedCloudTopTau, modisRetrievedCloudTopSize, & ! YQIN
          modisRetrievedTau,modisRetrievedSize,   &
          misr_boxtau,misr_boxztop,misr_dist_model_layertops,isccp_boxtau,       &
          isccp_boxttop,isccp_boxptop,calipso_beta_mol,lidar_only_freq_cloud,    &
@@ -452,6 +456,8 @@ CONTAINS
         associated(cospOUT%modis_Cloud_Top_Temperature_Total_Mean)            .or.          & ! YQIN
         associated(cospOUT%modis_Cloud_Top_Nd_Total_Mean)            .or.          & ! YQIN
         associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean)                 .or.          & ! YQIN
+        associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean)                 .or.          & ! YQIN
+        associated(cospOUT%modis_Cloud_Top_Size_Total_Mean)                 .or.          & ! YQIN
         associated(cospOUT%modis_Liquid_Water_Path_Mean)                   .or.          &
         associated(cospOUT%modis_Ice_Water_Path_Mean)                      .or.          &
         associated(cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure))               &
@@ -580,6 +586,8 @@ CONTAINS
         associated(cospOUT%modis_Cloud_Top_Temperature_Total_Mean)            .or.          & ! YQIN
         associated(cospOUT%modis_Cloud_Top_Nd_Total_Mean)            .or.          & ! YQIN
         associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean)                 .or.          & ! YQIN
+        associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean)                 .or.          & ! YQIN
+        associated(cospOUT%modis_Cloud_Top_Size_Total_Mean)                 .or.          & ! YQIN
         associated(cospOUT%modis_Liquid_Water_Path_Mean)                   .or.          &
         associated(cospOUT%modis_Ice_Water_Path_Mean)                      .or.          &
         associated(cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure)) then
@@ -900,7 +908,9 @@ CONTAINS
                    modisRetrievedCloudTopPressure(modisIN%nSunlit,modisIN%nColumns),     &
                    modisRetrievedCloudTopTemperature(modisIN%nSunlit,modisIN%nColumns),     & ! YQIN
                    modisRetrievedCloudTopNd(modisIN%nSunlit,modisIN%nColumns),  & ! YQIN
-                   modisRetrievedCloudTopLWP(modisIN%nSunlit,modisIN%nColumns)  & ! YQIN
+                   modisRetrievedCloudTopLWP(modisIN%nSunlit,modisIN%nColumns),  & ! YQIN
+                   modisRetrievedCloudTopTau(modisIN%nSunlit,modisIN%nColumns),  & ! YQIN
+                   modisRetrievedCloudTopSize(modisIN%nSunlit,modisIN%nColumns)  & ! YQIN
                    )
           ! Call simulator
           do i = 1, modisIN%nSunlit
@@ -917,6 +927,8 @@ CONTAINS
                                   modisRetrievedCloudTopTemperature(i,:),                & ! YQIN
                                   modisRetrievedCloudTopNd(i,:),                   & ! YQIN
                                   modisRetrievedCloudTopLWP(i,:),                  & ! YQIN
+                                  modisRetrievedCloudTopTau(i,:),                  & ! YQIN
+                                  modisRetrievedCloudTopSize(i,:),                  & ! YQIN
                                   modisRetrievedTau(i,:),modisRetrievedSize(i,:))
           end do
        endif
@@ -1313,6 +1325,8 @@ CONTAINS
                    modisMeanCloudTopTemperature(modisIN%nSunlit),                           & ! YQIN
                    modisMeanCloudTopNd(modisIN%nSunlit),                           & ! YQIN
                    modisMeanCloudTopLWP(modisIN%nSunlit),                                & ! YQIN
+                   modisMeanCloudTopTau(modisIN%nSunlit),                                & ! YQIN
+                   modisMeanCloudTopSize(modisIN%nSunlit),                                & ! YQIN
                    modisMeanLiquidWaterPath(modisIN%nSunlit),                            &
                    modisMeanIceWaterPath(modisIN%nSunlit),                               &
                    modisJointHistogram(modisIN%nSunlit,numMODISTauBins,numMODISPresBins),&
@@ -1324,6 +1338,8 @@ CONTAINS
                              modisRetrievedCloudTopTemperature, & ! YQIN
                              modisRetrievedCloudTopNd, & ! YQIN
                              modisRetrievedCloudTopLWP, & ! YQIN
+                             modisRetrievedCloudTopTau, & ! YQIN
+                             modisRetrievedCloudTopSize, & ! YQIN
                              modisRetrievedTau,           &
                              modisRetrievedSize, modisCfTotal, modisCfLiquid, modisCfIce,&
                              modisCfNd, modisCfLWP, & ! YQIN 
@@ -1335,6 +1351,8 @@ CONTAINS
                              modisMeanCloudTopTemperature, & ! YQIN 
                              modisMeanCloudTopNd, & ! YQIN
                              modisMeanCloudTopLWP, & ! YQIN
+                             modisMeanCloudTopTau, & ! YQIN
+                             modisMeanCloudTopSize, & ! YQIN
                              modisMeanLiquidWaterPath,        &
                              modisMeanIceWaterPath, modisJointHistogram,                 &
                              modisJointHistogramIce,modisJointHistogramLiq)
@@ -1423,6 +1441,14 @@ CONTAINS
              cospOUT%modis_Cloud_Top_LWP_Total_Mean(ij+int(modisIN%sunlit(:))-1) =  &
                   modisMeanCloudTopLWP
           endif
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean)) then
+             cospOUT%modis_Cloud_Top_Tau_Total_Mean(ij+int(modisIN%sunlit(:))-1) =  &
+                  modisMeanCloudTopTau
+          endif
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean)) then
+             cospOUT%modis_Cloud_Top_Size_Total_Mean(ij+int(modisIN%sunlit(:))-1) =  &
+                  modisMeanCloudTopSize
+          endif
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean)) then
              cospOUT%modis_Liquid_Water_Path_Mean(ij+int(modisIN%sunlit(:))-1)      =    &
@@ -1495,6 +1521,10 @@ CONTAINS
                 cospOUT%modis_Cloud_Top_Nd_Total_Mean(ij+int(modisIN%notSunlit(:))-1) = R_UNDEF
              if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                &
                 cospOUT%modis_Cloud_Top_LWP_Total_Mean(ij+int(modisIN%notSunlit(:))-1) = R_UNDEF
+             if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                &
+                cospOUT%modis_Cloud_Top_Tau_Total_Mean(ij+int(modisIN%notSunlit(:))-1) = R_UNDEF
+             if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                &
+                cospOUT%modis_Cloud_Top_Size_Total_Mean(ij+int(modisIN%notSunlit(:))-1) = R_UNDEF
 
              if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                       &
                 cospOUT%modis_Liquid_Water_Path_Mean(ij+int(modisIN%notSunlit(:))-1) = R_UNDEF
@@ -1550,6 +1580,10 @@ CONTAINS
              cospOUT%modis_Cloud_Top_Nd_Total_Mean(ij:ik) = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                   &
              cospOUT%modis_Cloud_Top_LWP_Total_Mean(ij:ik) = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                   &
+             cospOUT%modis_Cloud_Top_Tau_Total_Mean(ij:ik) = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                   &
+             cospOUT%modis_Cloud_Top_Size_Total_Mean(ij:ik) = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                          &
              cospOUT%modis_Liquid_Water_Path_Mean(ij:ik) = R_UNDEF
@@ -1568,6 +1602,8 @@ CONTAINS
        if (allocated(modisRetrievedCloudTopTemperature))  deallocate(modisRetrievedCloudTopTemperature) 
        if (allocated(modisRetrievedCloudTopNd))  deallocate(modisRetrievedCloudTopNd)
        if (allocated(modisRetrievedCloudTopLWP))           deallocate(modisRetrievedCloudTopLWP)
+       if (allocated(modisRetrievedCloudTopTau))           deallocate(modisRetrievedCloudTopTau)
+       if (allocated(modisRetrievedCloudTopSize))           deallocate(modisRetrievedCloudTopSize)
 
        if (allocated(modisCftotal))                    deallocate(modisCftotal)
        if (allocated(modisCfLiquid))                   deallocate(modisCfLiquid)
@@ -1593,7 +1629,9 @@ CONTAINS
        ! YQIN 
        if (allocated(modisMeanCloudTopTemperature))       deallocate(modisMeanCloudTopTemperature)
        if (allocated(modisMeanCloudTopNd))       deallocate(modisMeanCloudTopNd)
-       if (allocated(modisMeanCloudTopLWp))            deallocate(modisMeanCloudTopLWP)
+       if (allocated(modisMeanCloudTopLWP))            deallocate(modisMeanCloudTopLWP)
+       if (allocated(modisMeanCloudTopTau))            deallocate(modisMeanCloudTopTau)
+       if (allocated(modisMeanCloudTopSize))            deallocate(modisMeanCloudTopSize)
 
        if (allocated(modisMeanLiquidWaterPath))        deallocate(modisMeanLiquidWaterPath)
        if (allocated(modisMeanIceWaterPath))           deallocate(modisMeanIceWaterPath)
@@ -2424,6 +2462,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
@@ -2631,6 +2673,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
@@ -2782,6 +2828,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
@@ -3111,6 +3161,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
@@ -3192,6 +3246,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
@@ -3254,6 +3312,10 @@ CONTAINS
                cospOUT%modis_Cloud_Top_Nd_Total_Mean(:)               = R_UNDEF
           if (associated(cospOUT%modis_Cloud_Top_LWP_Total_Mean))                      &
                cospOUT%modis_Cloud_Top_LWP_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Tau_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Tau_Total_Mean(:)               = R_UNDEF
+          if (associated(cospOUT%modis_Cloud_Top_Size_Total_Mean))                      &
+               cospOUT%modis_Cloud_Top_Size_Total_Mean(:)               = R_UNDEF
 
           if (associated(cospOUT%modis_Liquid_Water_Path_Mean))                             &
                cospOUT%modis_Liquid_Water_Path_Mean(:)                      = R_UNDEF
