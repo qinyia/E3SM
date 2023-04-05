@@ -97,6 +97,10 @@ module cospsimulator_intr
   real(r8), target :: reffLIQ_binEdges_cosp(2,numMODISReffLiqBins)
   real(r8), target :: reffICE_binCenters_cosp(numMODISReffIceBins)
   real(r8), target :: reffLIQ_binCenters_cosp(numMODISReffLiqBins)
+  ! YQIN 04/04/23
+  real(r8), target :: lwpmid_cosp_modis(nlwp_cosp_modis)! LWP midpoints of COSP MODIS output
+  real(r8), target :: lwplim_cosp_modis(2,nlwp_cosp_modis)
+
 
   real(r8) :: htmlmid_cosp(nhtml_cosp)                     ! Model level height midpoints for output
   integer  :: prstau_cosp(nprs_cosp*ntau_cosp)             ! ISCCP mixed output dimension index
@@ -1054,7 +1058,7 @@ CONTAINS
        call addfld ('CLMODIS_ICE',(/'cosp_tau_modis','cosp_prs      '/),'A','%','MODIS Cloud Area Fraction only Ice',            &
             flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clmodis_lwpre ( time, plev, tau, loc )
-       call addfld ('CLMODIS_LWPR',(/'cosp_lwp_modis','cos_reffliq     '/),'A','%','MODIS Cloud Area Fraction (LWP-RE histogram)',            &
+       call addfld ('CLMODIS_LWPR',(/'cosp_lwp_modis','cosp_reffliq     '/),'A','%','MODIS Cloud Area Fraction (LWP-RE histogram)',            &
             flag_xyfill=.true., fill_value=R_UNDEF)
 
        !! add MODIS output to history file specified by the CAM namelist variable cosp_histfile_num
@@ -1375,7 +1379,7 @@ CONTAINS
     integer, parameter :: nf_calipso=28                  ! number of calipso outputs
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
-    integer, parameter :: nf_modis=20                    ! number of modis outputs
+    integer, parameter :: nf_modis=23 !20                    ! number of modis outputs ! YQIN 04/04/23
     
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1415,7 +1419,7 @@ CONTAINS
                        'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
                        'PCTMODIS    ','LWPMODIS    ','IWPMODIS    ','CLMODIS     ','CLRIMODIS   ',&
                        'CLRLMODIS   ',&
-                       'CLMODIS_LIQ ','CLMODIS_ICE ','CLMODIS_LWPR',&
+                       'CLMODIS_LIQ ','CLMODIS_ICE ','CLMODIS_LWPR' & ! YQIN 04/04/23
                        /)
     
     logical :: run_radar(nf_radar,pcols)                 ! logical telling you if you should run radar simulator
@@ -2546,8 +2550,8 @@ CONTAINS
           ! CAM clmodis_lwpre
           do ip=1,numMODISReffLiqBins
              do it=1,nlwp_cosp_modis
-                ipt=(ip-1)*ntau_cosp_modis+it
-                clmodis_lwpre_cam(i,ipt) = clmodis_lwpre_cam(i,it,ip)
+                ipt=(ip-1)*nlwp_cosp_modis+it
+                clmodis_lwpre_cam(i,ipt) = clmodis_lwpre(i,it,ip)
              end do
           end do
 

@@ -1289,7 +1289,7 @@ CONTAINS
                    modisJointHistogramLiq(modisIN%nSunlit,numModisTauBins,numMODISReffLiqBins),&
                    modisJointHistogram_CtpCodLiq(modisIN%nSunlit,numMODISTauBins,numMODISPresBins),& ! YQIN 04/04/23
                    modisJointHistogram_CtpCodIce(modisIN%nSunlit,numMODISTauBins,numMODISPresBins),&
-                   modisJointHistogram_LwpRefLiq(modisIN%nSunlit,numModisLWPBins,numMODISReffLiqBins) &
+                   modisJointHistogram_LwpRefLiq(modisIN%nSunlit,numMODISLWPBins,numMODISReffLiqBins) &
                    )
           ! Call simulator
           call modis_column(modisIN%nSunlit, modisIN%Ncolumns,modisRetrievedPhase,       &
@@ -1302,7 +1302,9 @@ CONTAINS
                              modisMeanCloudTopPressure, modisMeanLiquidWaterPath,        &
                              modisMeanIceWaterPath, modisJointHistogram,                 &
                              modisJointHistogramIce,modisJointHistogramLiq,              &
-                             modisJointHistogram_CtpCodLiq, modisJointHistogram_CtpCodIce, modisJointHistogram_LwpRefLiq & ! YQIN 04/04/23
+                             modisJointHistogram_CtpCodLiq, & ! YQIN 04/04/23
+                             modisJointHistogram_CtpCodIce, &
+                             modisJointHistogram_LwpRefLiq  &
                              )
           ! Store data (if requested)
           if (associated(cospOUT%modis_Cloud_Fraction_Total_Mean)) then
