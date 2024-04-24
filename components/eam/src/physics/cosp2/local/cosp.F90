@@ -288,7 +288,9 @@ MODULE MOD_COSP
      real(wp),pointer,dimension(:,:,:) ::  &
           modis_Optical_Thickness_vs_Cloud_Top_Pressure_Liq => null(), & ! Tau/Pressure Liq joint histogram
           modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice => null(), & ! Tau/Pressure Ice joint histogram
-          modis_LWP_vs_ReffLIQ => null()               ! LWP/ReffLIQ joint histogram
+          modis_LWP_vs_ReffLIQ => null(),                              & ! LWP/ReffLIQ joint histogram
+          modis_IWP_vs_ReffICE => null() ! YQIN 04/24/24
+
 
      ! RTTOV outputs
      real(wp),pointer :: &
@@ -372,6 +374,7 @@ CONTAINS
     REAL(WP), dimension(:,:,:),allocatable :: &
          modisJointHistogram,modisJointHistogramIce,modisJointHistogramLiq,     &
          modisJointHistogram_CtpCodLiq,modisJointHistogram_CtpCodIce,modisJointHistogram_LwpRefLiq, & ! YQIN 04/04/23
+         modisJointHistogram_IwpRefIce, & ! YQIN 04/24/24
          calipso_beta_tot,calipso_betaperp_tot, cloudsatDBZe,parasolPix_refl,   &
          grLidar532_beta_tot,atlid_beta_tot,cloudsatZe_non
     real(wp),dimension(:),allocatable,target :: &
@@ -1289,7 +1292,8 @@ CONTAINS
                    modisJointHistogramLiq(modisIN%nSunlit,numModisTauBins,numMODISReffLiqBins),&
                    modisJointHistogram_CtpCodLiq(modisIN%nSunlit,numMODISTauBins,numMODISPresBins),& ! YQIN 04/04/23
                    modisJointHistogram_CtpCodIce(modisIN%nSunlit,numMODISTauBins,numMODISPresBins),&
-                   modisJointHistogram_LwpRefLiq(modisIN%nSunlit,numMODISLWPBins,numMODISReffLiqBins) &
+                   modisJointHistogram_LwpRefLiq(modisIN%nSunlit,numMODISLWPBins,numMODISReffLiqBins), &
+                   modisJointHistogram_IwpRefIce(modisIN%nSunlit,numMODISLWPBins,numMODISReffIceBins) & ! YQIN 04/24/24
                    )
           ! Call simulator
           call modis_column(modisIN%nSunlit, modisIN%Ncolumns,modisRetrievedPhase,       &
@@ -1304,7 +1308,8 @@ CONTAINS
                              modisJointHistogramIce,modisJointHistogramLiq,              &
                              modisJointHistogram_CtpCodLiq, & ! YQIN 04/04/23
                              modisJointHistogram_CtpCodIce, &
-                             modisJointHistogram_LwpRefLiq  &
+                             modisJointHistogram_LwpRefLiq, &
+                             modisJointHistogram_IwpRefIce & ! YQIN 04/24/24
                              )
           ! Store data (if requested)
           if (associated(cospOUT%modis_Cloud_Fraction_Total_Mean)) then
@@ -1402,6 +1407,12 @@ CONTAINS
              cospOUT%modis_LWP_vs_ReffLIQ(ij+int(modisIN%sunlit(:))-1, 1:numMODISLWPBins,:) = &
                 modisJointHistogram_LwpRefLiq(:,:,:)
           endif
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE)) then
+             cospOUT%modis_IWP_vs_ReffICE(ij+int(modisIN%sunlit(:))-1, 1:numMODISLWPBins,:) = &
+                modisJointHistogram_IwpRefIce(:,:,:)
+          endif
+
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffIce)) then
              cospOUT%modis_Optical_Thickness_vs_ReffIce(ij+int(modisIN%sunlit(:))-1, 1:numMODISTauBins,:) = &
@@ -1517,6 +1528,8 @@ CONTAINS
        if (allocated(modisJointHistogram_CtpCodLiq))   deallocate(modisJointHistogram_CtpCodLiq)
        if (allocated(modisJointHistogram_CtpCodIce))   deallocate(modisJointHistogram_CtpCodIce)
        if (allocated(modisJointHistogram_LwpRefLiq))   deallocate(modisJointHistogram_LwpRefLiq)
+       ! YQIN 04/24/24
+       if (allocated(modisJointHistogram_IwpRefIce))   deallocate(modisJointHistogram_IwpRefIce)
 
        if (allocated(modisJointHistogramIce))          deallocate(modisJointHistogramIce)
        if (allocated(modisJointHistogramLiq))          deallocate(modisJointHistogramLiq)
@@ -2341,6 +2354,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
@@ -2541,6 +2557,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
@@ -2685,6 +2704,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
@@ -3007,6 +3029,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
@@ -3081,6 +3106,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
@@ -3136,6 +3164,9 @@ CONTAINS
                cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(:,:,:) = R_UNDEF
           if (associated(cospOUT%modis_LWP_vs_ReffLIQ))            &
                cospOUT%modis_LWP_vs_ReffLIQ(:,:,:) = R_UNDEF
+          ! YQIN 04/24/24
+          if (associated(cospOUT%modis_IWP_vs_ReffICE))            &
+               cospOUT%modis_IWP_vs_ReffICE(:,:,:) = R_UNDEF
 
           if (associated(cospOUT%modis_Optical_Thickness_vs_ReffICE))                       &
                cospOUT%modis_Optical_Thickness_vs_ReffICE(:,:,:)            = R_UNDEF
