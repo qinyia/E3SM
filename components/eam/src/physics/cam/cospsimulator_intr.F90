@@ -40,7 +40,10 @@ module cospsimulator_intr
        cloudsat_preclvl, &
        nlwp_cosp_modis   => nLWP, & ! YQIN 04/04/23
        LWP_binCenters, LWP_binEdges, &
-       numMODISLWPBins
+       numMODISLWPBins, &
+       niwp_cosp_modis   => nIWP, & ! YQIN 04/24/24
+       IWP_binCenters, IWP_binEdges, & 
+       numMODISIWPBins 
 
     use mod_cosp_stats,       only: cosp_change_vertical_grid
 #endif
@@ -101,6 +104,9 @@ module cospsimulator_intr
   real(r8), target :: lwpmid_cosp_modis(nlwp_cosp_modis)! LWP midpoints of COSP MODIS output
   real(r8), target :: lwplim_cosp_modis(2,nlwp_cosp_modis)
 
+  ! YQIN 04/24/24
+  real(r8), target :: iwpmid_cosp_modis(niwp_cosp_modis)
+  real(r8), target :: iwplim_cosp_modis(2,niwp_cosp_modis)
 
   real(r8) :: htmlmid_cosp(nhtml_cosp)                     ! Model level height midpoints for output
   integer  :: prstau_cosp(nprs_cosp*ntau_cosp)             ! ISCCP mixed output dimension index
@@ -317,6 +323,10 @@ CONTAINS
     lwpmid_cosp_modis = LWP_binCenters
     lwplim_cosp_modis = LWP_binEdges
                                  
+    ! YQIN 04/24/24
+    iwpmid_cosp_modis = IWP_binCenters
+    iwplim_cosp_modis = IWP_binEdges
+                                  
     ! Initialize the distributional parameters for hydrometeors in radar simulator. In COSPv1.4, this was declared in
     ! cosp_defs.f.
     if (cloudsat_micro_scheme == 'MMF_v3.5_two_moment')  then
@@ -680,6 +690,11 @@ CONTAINS
             'COSP Mean MODIS Liquid Water Path', 'kg/m2', lwpmid_cosp_modis,           &
             bounds_name='cosp_lwp_modis_bnds', bounds=lwplim_cosp_modis)
 
+       ! YQIN 04/24/24
+       call add_hist_coord('cosp_iwp_modis', niwp_cosp_modis,                  &
+            'COSP Mean MODIS Ice Water Path', 'kg/m2', iwpmid_cosp_modis,           &
+            bounds_name='cosp_iwp_modis_bnds', bounds=iwplim_cosp_modis)
+
     end if
     
 #endif
@@ -1003,6 +1018,12 @@ CONTAINS
        call addfld ('CLWMODIS',horiz_only,'A','%','MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float climodis ( time, loc )
        call addfld ('CLIMODIS',horiz_only,'A','%','MODIS Ice Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float cltmodisic ( time, loc )
+       call addfld ('CLTMODISIC',horiz_only,'A','%','In-cloud MODIS Total Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float clwmodisic ( time, loc )
+       call addfld ('CLWMODISIC',horiz_only,'A','%','In-cloud MODIS Liquid Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float climodisic ( time, loc )
+       call addfld ('CLIMODISIC',horiz_only,'A','%','In-cloud MODIS Ice Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clhmodis ( time, loc )
        call addfld ('CLHMODIS',horiz_only,'A','%','MODIS High Level Cloud Fraction',flag_xyfill=.true., fill_value=R_UNDEF)
        ! float clmmodis ( time, loc )
@@ -1033,8 +1054,39 @@ CONTAINS
        ! float reffclimodis ( time, loc )
        call addfld ('REFFCLIMODIS',horiz_only,'A','m','MODIS Ice Cloud Particle Size*CLIMODIS',                     &
             flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float reffmodisl (time, loc )
+       call addfld ('REFFMODISL', horiz_only,'A','m','MODIS Liquid Cloud Particle Size',                             &
+            flag_xyfill=.true., fill_value=R_UNDEF)
+       ! float reffmodisi ( time, loc )
+       call addfld ('REFFMODISI', horiz_only,'A','m', 'MODIS Ice Cloud Particle Size',                               &
+            flag_xyfill=.true., fill_value=R_UNDEF)
        ! float pctmodis ( time, loc )
        call addfld ('PCTMODIS',horiz_only,'A','Pa','MODIS Cloud Top Pressure*CLTMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
+
+       ! YQIN
+       ! float tctmodis ( time, loc )
+       call addfld ('TCTMODIS',     horiz_only,  'A','Pa',      'MODIS Cloud Top Temperature*CLTMODIS',                              flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('TCTMODISIC',   horiz_only,  'A','K',       'MODIS Cloud Top Temperature',                                       flag_xyfill=.true., fill_value=R_UNDEF)
+
+       call addfld ('NDMODIS_Q06',      horiz_only,  'A','cm-3',    'MODIS Cloud Top cloud droplet number concentration (Nd)*CLNDMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLNDMODIS_Q06',    horiz_only,  'A','fraction','MODIS CLOUD Fraction of Nd case',                          flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLNDMODISI_Q06',    horiz_only,  'A','fraction','MODIS in-cloud CLOUD Fraction of Nd case',                          flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('NDMODISIC_Q06',    horiz_only,  'A','cm-3',    'MODIS Cloud Top cloud droplet number concentration',                flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODIS_Q06',     horiz_only,  'A','kg/m2',   'MODIS LWP*CLNDMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODISI_Q06',    horiz_only,  'A','kg/m2',    'MODIS LWP (same sampling as Nd)',                                   flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('TAUMODIS_Q06',     horiz_only,  'A','1',       'MODIS TAU*CLNDMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('REMODIS_Q06',      horiz_only,  'A','m',        'MODIS RE*CLNDMODIS (same sampling as Nd)',                         flag_xyfill=.true., fill_value=R_UNDEF)
+
+       call addfld ('NDMODIS_ALL',      horiz_only,  'A','cm-3',    'MODIS Cloud Top cloud droplet number concentration (Nd)*CLNDMODIS',flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLNDMODIS_ALL',    horiz_only,  'A','fraction','MODIS CLOUD Fraction of Nd case',                          flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('CLNDMODISI_ALL',    horiz_only,  'A','fraction','MODIS in-cloud CLOUD Fraction of Nd case',                          flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('NDMODISIC_ALL',    horiz_only,  'A','cm-3',    'MODIS Cloud Top cloud droplet number concentration',                flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODIS_ALL',     horiz_only,  'A','kg/m2',   'MODIS LWP*CLNDMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('LWPMODISI_ALL',    horiz_only,  'A','kg/m2',    'MODIS LWP (same sampling as Nd)',                                   flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('TAUMODIS_ALL',     horiz_only,  'A','1',       'MODIS TAU*CLNDMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
+       call addfld ('REMODIS_ALL',      horiz_only,  'A','m',        'MODIS RE*CLNDMODIS (same sampling as Nd)',                         flag_xyfill=.true., fill_value=R_UNDEF)
+
+
        ! float lwpmodis ( time, loc )
        call addfld ('LWPMODIS',horiz_only,'A','kg m-2','MODIS Cloud Liquid Water Path*CLWMODIS',                    &
             flag_xyfill=.true., fill_value=R_UNDEF)
@@ -1062,7 +1114,7 @@ CONTAINS
             flag_xyfill=.true., fill_value=R_UNDEF)
        ! YQIN 04/24/24
        ! float clmodis_iwpre ( time, plev, tau, loc )
-       call addfld ('CLMODIS_IWPR',(/'cosp_lwp_modis','cosp_reffice '/),'A','%','MODIS Cloud Area Fraction (IWP-REice histogram)',            &
+       call addfld ('CLMODIS_IWPR',(/'cosp_iwp_modis','cosp_reffice  '/),'A','%','MODIS Cloud Area Fraction (IWP-REice histogram)',            &
             flag_xyfill=.true., fill_value=R_UNDEF)
 
 
@@ -1070,6 +1122,9 @@ CONTAINS
        call add_default ('CLTMODIS',cosp_histfile_num,' ')
        call add_default ('CLWMODIS',cosp_histfile_num,' ')
        call add_default ('CLIMODIS',cosp_histfile_num,' ')
+       call add_default ('CLTMODISIC',cosp_histfile_num,' ')
+       call add_default ('CLWMODISIC',cosp_histfile_num,' ')
+       call add_default ('CLIMODISIC',cosp_histfile_num,' ')
        call add_default ('CLHMODIS',cosp_histfile_num,' ')
        call add_default ('CLMMODIS',cosp_histfile_num,' ')
        call add_default ('CLLMODIS',cosp_histfile_num,' ')
@@ -1081,7 +1136,31 @@ CONTAINS
        call add_default ('TAUILOGMODIS',cosp_histfile_num,' ')
        call add_default ('REFFCLWMODIS',cosp_histfile_num,' ')
        call add_default ('REFFCLIMODIS',cosp_histfile_num,' ')
+       call add_default ('REFFMODISL',cosp_histfile_num, ' ')
+       call add_default ('REFFMODISI',cosp_histfile_num, ' ')
        call add_default ('PCTMODIS',cosp_histfile_num,' ')
+       ! YQIN
+       call add_default ('TCTMODIS',cosp_histfile_num,' ')
+       call add_default ('TCTMODISIC',cosp_histfile_num,' ')
+
+       call add_default ('NDMODIS_Q06',cosp_histfile_num,' ')
+       call add_default ('CLNDMODIS_Q06',cosp_histfile_num,' ')
+       call add_default ('CLNDMODISI_Q06',cosp_histfile_num,' ')
+       call add_default ('NDMODISIC_Q06',cosp_histfile_num,' ')
+       call add_default ('LWPMODIS_Q06',cosp_histfile_num,' ')
+       call add_default ('LWPMODISI_Q06',cosp_histfile_num,' ')
+       call add_default ('TAUMODIS_Q06',cosp_histfile_num, ' ')
+       call add_default ('REMODIS_Q06',cosp_histfile_num, ' ')
+
+       call add_default ('NDMODIS_ALL',cosp_histfile_num,' ')
+       call add_default ('CLNDMODIS_ALL',cosp_histfile_num,' ')
+       call add_default ('CLNDMODISI_ALL',cosp_histfile_num,' ')
+       call add_default ('NDMODISIC_ALL',cosp_histfile_num,' ')
+       call add_default ('LWPMODIS_ALL',cosp_histfile_num,' ')
+       call add_default ('LWPMODISI_ALL',cosp_histfile_num,' ')
+       call add_default ('TAUMODIS_ALL',cosp_histfile_num, ' ')
+       call add_default ('REMODIS_ALL',cosp_histfile_num, ' ')
+
        call add_default ('LWPMODIS',cosp_histfile_num,' ')
        call add_default ('IWPMODIS',cosp_histfile_num,' ')
        call add_default ('CLMODIS',cosp_histfile_num,' ')
@@ -1227,7 +1306,7 @@ CONTAINS
   ! ######################################################################################
   ! SUBROUTINE cospsimulator_intr_run
   ! ######################################################################################
-  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,cld_swtau_in,snow_tau_in,snow_emis_in)    
+  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,cld_swtau_in,snow_tau_in,snow_emis_in)
     use physics_types,        only: physics_state
     use physics_buffer,       only: physics_buffer_desc, pbuf_get_field, pbuf_old_tim_idx
     use camsrfexch,           only: cam_in_t
@@ -1387,7 +1466,8 @@ CONTAINS
     integer, parameter :: nf_calipso=28                  ! number of calipso outputs
     integer, parameter :: nf_isccp=9                     ! number of isccp outputs
     integer, parameter :: nf_misr=1                      ! number of misr outputs
-    integer, parameter :: nf_modis=24 !20                    ! number of modis outputs ! YQIN 04/04/23 04/24/24
+!    integer, parameter :: nf_modis=20                    ! number of modis outputs
+    integer, parameter :: nf_modis=47                    ! number of modis outputs ! YQIN 04/24/24
     
     ! Cloudsat outputs
     character(len=max_fieldname_len),dimension(nf_radar),parameter ::          &
@@ -1423,12 +1503,21 @@ CONTAINS
     ! MODIS outputs
     character(len=max_fieldname_len),dimension(nf_modis) :: &
          fname_modis=(/'CLTMODIS    ','CLWMODIS    ','CLIMODIS    ','CLHMODIS    ','CLMMODIS    ',&
-                       'CLLMODIS    ','TAUTMODIS   ','TAUWMODIS   ','TAUIMODIS   ','TAUTLOGMODIS',&
-                       'TAUWLOGMODIS','TAUILOGMODIS','REFFCLWMODIS','REFFCLIMODIS',&
-                       'PCTMODIS    ','LWPMODIS    ','IWPMODIS    ','CLMODIS     ','CLRIMODIS   ',&
-                       'CLRLMODIS   ',&
-                       'CLMODIS_LIQ ','CLMODIS_ICE ','CLMODIS_LWPR', & ! YQIN 04/04/23
-                       'CLMODIS_IWPR' & ! YQIN 04/24/24
+                       'CLTMODISIC    ','CLWMODISIC    ','CLIMODISIC    ',&
+                       'CLLMODIS      ','TAUTMODIS     ','TAUWMODIS     ','TAUIMODIS     ','TAUTLOGMODIS  ',&
+                       'TAUWLOGMODIS  ','TAUILOGMODIS  ','REFFCLWMODIS  ','REFFCLIMODIS  ',&
+                       'PCTMODIS      ', &
+                       'TCTMODIS      ','NDMODIS_Q06   ','CLNDMODIS_Q06 ','TCTMODISIC    ','NDMODISIC_Q06 ',& ! YQIN
+                       'LWPMODIS_Q06  ','LWPMODISI_Q06 ', & ! YQIN 
+                       'TAUMODIS_Q06  ','REMODIS_Q06   ', & ! YQIN
+                       'NDMODIS_ALL   ','CLNDMODIS_ALL ','NDMODISIC_ALL ',& ! YQIN
+                       'LWPMODIS_ALL  ','LWPMODISI_ALL ', & ! YQIN 
+                       'TAUMODIS_ALL  ','REMODIS_ALL   ', & ! YQIN
+                       'CLNDMODISI_Q06','CLNDMODISI_ALL', & ! YQIN 
+                       'LWPMODIS      ','IWPMODIS      ','CLMODIS       ','CLRIMODIS     ',&
+                       'CLRLMODIS     ','REFFMODISL    ','REFFMODISI    ', &
+                       'CLMODIS_LIQ   ','CLMODIS_ICE   ','CLMODIS_LWPR  ', & ! YQIN 04/04/23
+                       'CLMODIS_IWPR  ' & ! YQIN 04/24/24
                        /)
     
     logical :: run_radar(nf_radar,pcols)                 ! logical telling you if you should run radar simulator
@@ -1568,8 +1657,12 @@ CONTAINS
     real(r8) :: refl_parasol(pcols,nsza_cosp)            ! CAM parasol_refl (time,sza,profile)
     real(r8) :: scops_out(pcols,nhtml_cosp*nscol_cosp)   ! CAM frac_out (time,height_mlev,column,profile)
     real(r8) :: cltmodis(pcols)
+    real(r8) :: cltmodis_ALL(pcols)
     real(r8) :: clwmodis(pcols)
     real(r8) :: climodis(pcols)
+    real(r8) :: cltmodisic(pcols)
+    real(r8) :: clwmodisic(pcols)
+    real(r8) :: climodisic(pcols)
     real(r8) :: clhmodis(pcols)
     real(r8) :: clmmodis(pcols)
     real(r8) :: cllmodis(pcols)
@@ -1581,11 +1674,41 @@ CONTAINS
     real(r8) :: tauilogmodis(pcols)
     real(r8) :: reffclwmodis(pcols)
     real(r8) :: reffclimodis(pcols)
+    real(r8) :: reffmodisl(pcols)
+    real(r8) :: reffmodisi(pcols)
     real(r8) :: pctmodis(pcols)
+
+    ! YQIN
+    real(r8) :: tctmodis(pcols)
+    real(r8) :: tctmodisic(pcols)
+
+    real(r8) :: clNdmodis_Q06(pcols)
+    real(r8) :: clNdmodisi_Q06(pcols)
+    real(r8) :: ndmodis_Q06(pcols)
+    real(r8) :: ndmodisic_Q06(pcols)
+    real(r8) :: lwpmodis_Q06(pcols)
+    real(r8) :: lwpmodisi_Q06(pcols)
+    real(r8) :: taumodis_Q06(pcols)
+    real(r8) :: remodis_Q06(pcols)
+
+    real(r8) :: clNdmodis_ALL(pcols)
+    real(r8) :: clNdmodisi_ALL(pcols)
+    real(r8) :: ndmodis_ALL(pcols)
+    real(r8) :: ndmodisic_ALL(pcols)
+    real(r8) :: lwpmodis_ALL(pcols)
+    real(r8) :: lwpmodisi_ALL(pcols)
+    real(r8) :: taumodis_ALL(pcols)
+    real(r8) :: remodis_ALL(pcols)
+
     real(r8) :: lwpmodis(pcols)
     real(r8) :: iwpmodis(pcols)
     real(r8) :: clmodis_cam(pcols,ntau_cosp_modis*nprs_cosp)
     real(r8) :: clmodis(pcols,ntau_cosp_modis,nprs_cosp)
+    real(r8) :: clrimodis_cam(pcols,ntau_cosp*numMODISReffIceBins)
+    real(r8) :: clrimodis(pcols,ntau_cosp,numMODISReffIceBins)
+    real(r8) :: clrlmodis_cam(pcols,ntau_cosp*numMODISReffLiqBins)
+    real(r8) :: clrlmodis(pcols,ntau_cosp,numMODISReffLiqBins)
+
     ! YQIN 04/04/23
     real(r8) :: clmodis_liq_cam(pcols,ntau_cosp_modis*nprs_cosp)
     real(r8) :: clmodis_liq(pcols,ntau_cosp_modis,nprs_cosp)
@@ -1594,13 +1717,9 @@ CONTAINS
     real(r8) :: clmodis_lwpre_cam(pcols,nlwp_cosp_modis*numMODISReffLiqBins)
     real(r8) :: clmodis_lwpre(pcols,nlwp_cosp_modis,numMODISReffLiqBins)
     ! YQIN 04/24/24
-    real(r8) :: clmodis_iwpre_cam(pcols,nlwp_cosp_modis*numMODISReffIceBins)
-    real(r8) :: clmodis_iwpre(pcols,nlwp_cosp_modis,numMODISReffIceBins)
+    real(r8) :: clmodis_iwpre_cam(pcols,niwp_cosp_modis*numMODISReffIceBins)
+    real(r8) :: clmodis_iwpre(pcols,niwp_cosp_modis,numMODISReffIceBins)
 
-    real(r8) :: clrimodis_cam(pcols,ntau_cosp*numMODISReffIceBins)
-    real(r8) :: clrimodis(pcols,ntau_cosp,numMODISReffIceBins)
-    real(r8) :: clrlmodis_cam(pcols,ntau_cosp*numMODISReffLiqBins)
-    real(r8) :: clrlmodis(pcols,ntau_cosp,numMODISReffLiqBins)
     !real(r8) :: tau067_out(pcols,nhtml_cosp*nscol_cosp),emis11_out(pcols,nhtml_cosp*nscol_cosp)
     real(r8),dimension(pcols,nhtml_cosp*nscol_cosp) :: &
          tau067_out,emis11_out,fracliq_out,cal_betatot,cal_betatot_ice, &
@@ -1717,8 +1836,13 @@ CONTAINS
     refl_parasol(1:pcols,1:nsza_cosp)                = R_UNDEF
     scops_out(1:pcols,1:nhtml_cosp*nscol_cosp)       = R_UNDEF
     cltmodis(1:pcols)                                = R_UNDEF
+    cltmodis_ALL(1:pcols)                                = R_UNDEF
+
     clwmodis(1:pcols)                                = R_UNDEF
     climodis(1:pcols)                                = R_UNDEF
+    cltmodisic(1:pcols)                              = R_UNDEF
+    clwmodisic(1:pcols)                              = R_UNDEF
+    climodisic(1:pcols)                              = R_UNDEF
     clhmodis(1:pcols)                                = R_UNDEF
     clmmodis(1:pcols)                                = R_UNDEF
     cllmodis(1:pcols)                                = R_UNDEF
@@ -1730,23 +1854,36 @@ CONTAINS
     tauilogmodis(1:pcols)                            = R_UNDEF
     reffclwmodis(1:pcols)                            = R_UNDEF
     reffclimodis(1:pcols)                            = R_UNDEF
+    reffmodisl(1:pcols)                              = R_UNDEF
+    reffmodisi(1:pcols)                              = R_UNDEF
     pctmodis(1:pcols)                                = R_UNDEF
+
+    ! YQIN
+    tctmodis(1:pcols)                                = R_UNDEF
+    tctmodisic(1:pcols)                              = R_UNDEF
+
+    clNdmodis_Q06(1:pcols)                           = R_UNDEF
+    clNdmodisi_Q06(1:pcols)                          = R_UNDEF
+    ndmodis_Q06(1:pcols)                             = R_UNDEF
+    ndmodisic_Q06(1:pcols)                           = R_UNDEF
+    lwpmodis_Q06(1:pcols)                            = R_UNDEF
+    lwpmodisi_Q06(1:pcols)                           = R_UNDEF
+    taumodis_Q06(1:pcols)                            = R_UNDEF
+    remodis_Q06(1:pcols)                             = R_UNDEF
+
+    clNdmodis_ALL(1:pcols)                           = R_UNDEF
+    clNdmodisi_ALL(1:pcols)                          = R_UNDEF
+    ndmodis_ALL(1:pcols)                             = R_UNDEF
+    ndmodisic_ALL(1:pcols)                           = R_UNDEF
+    lwpmodis_ALL(1:pcols)                            = R_UNDEF
+    lwpmodisi_ALL(1:pcols)                           = R_UNDEF
+    taumodis_ALL(1:pcols)                            = R_UNDEF
+    remodis_ALL(1:pcols)                             = R_UNDEF
+
     lwpmodis(1:pcols)                                = R_UNDEF
     iwpmodis(1:pcols)                                = R_UNDEF
     clmodis_cam(1:pcols,1:ntau_cosp_modis*nprs_cosp) = R_UNDEF
     clmodis(1:pcols,1:ntau_cosp_modis,1:nprs_cosp)   = R_UNDEF
-    ! YQIN 04/04/23
-    clmodis_liq_cam(1:pcols,1:ntau_cosp_modis*nprs_cosp) = R_UNDEF
-    clmodis_liq(1:pcols,1:ntau_cosp_modis,1:nprs_cosp)   = R_UNDEF
-    clmodis_ice_cam(1:pcols,1:ntau_cosp_modis*nprs_cosp) = R_UNDEF
-    clmodis_ice(1:pcols,1:ntau_cosp_modis,1:nprs_cosp)   = R_UNDEF
-    clmodis_lwpre_cam(1:pcols,1:nlwp_cosp_modis*numMODISReffLiqBins) = R_UNDEF
-    clmodis_lwpre(1:pcols,1:nlwp_cosp_modis,1:numMODISReffLiqBins)   = R_UNDEF
-    ! YQIN 04/24/24
-    clmodis_iwpre_cam(1:pcols,1:nlwp_cosp_modis*numMODISReffIceBins) = R_UNDEF
-    clmodis_iwpre(1:pcols,1:nlwp_cosp_modis,1:numMODISReffIceBins)   = R_UNDEF
-
-
     clrimodis_cam(1:pcols,1:ntau_cosp_modis*numMODISReffIceBins) = R_UNDEF ! +cosp2
     clrimodis(1:pcols,1:ntau_cosp_modis,1:numMODISReffIceBins)   = R_UNDEF ! +cosp2
     clrlmodis_cam(1:pcols,1:ntau_cosp_modis*numMODISReffLiqBins) = R_UNDEF ! +cosp2
@@ -1756,6 +1893,18 @@ CONTAINS
     asym34_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     ssa34_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
     fracLiq_out(1:pcols,1:nhtml_cosp*nscol_cosp)      = R_UNDEF ! +cosp2
+
+    ! YQIN 04/04/23
+    clmodis_liq_cam(1:pcols,1:ntau_cosp_modis*nprs_cosp) = R_UNDEF
+    clmodis_liq(1:pcols,1:ntau_cosp_modis,1:nprs_cosp)   = R_UNDEF
+    clmodis_ice_cam(1:pcols,1:ntau_cosp_modis*nprs_cosp) = R_UNDEF
+    clmodis_ice(1:pcols,1:ntau_cosp_modis,1:nprs_cosp)   = R_UNDEF
+    clmodis_lwpre_cam(1:pcols,1:nlwp_cosp_modis*numMODISReffLiqBins) = R_UNDEF
+    clmodis_lwpre(1:pcols,1:nlwp_cosp_modis,1:numMODISReffLiqBins)   = R_UNDEF
+
+    ! YQIN 04/24/24
+    clmodis_iwpre_cam(1:pcols,1:niwp_cosp_modis*numMODISReffIceBins) = R_UNDEF
+    clmodis_iwpre(1:pcols,1:niwp_cosp_modis,1:numMODISReffIceBins)   = R_UNDEF
 
     ! ######################################################################################
     ! DECIDE WHICH COLUMNS YOU ARE GOING TO RUN COSP ON....
@@ -2293,6 +2442,9 @@ CONTAINS
              cospOUT%modis_Cloud_Fraction_Total_Mean(1:ncol)       = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Water_Mean(1:ncol)       = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Ice_Mean(1:ncol)         = R_UNDEF
+             cospOUT%modis_Cloud_Fraction_Nd_Q06_Mean(1:ncol)          = R_UNDEF ! YQIN
+             cospOUT%modis_Cloud_Fraction_Nd_ALL_Mean(1:ncol)          = R_UNDEF ! YQIN
+
              cospOUT%modis_Cloud_Fraction_High_Mean(1:ncol)        = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Mid_Mean(1:ncol)         = R_UNDEF
              cospOUT%modis_Cloud_Fraction_Low_Mean(1:ncol)         = R_UNDEF
@@ -2305,6 +2457,19 @@ CONTAINS
              cospOUT%modis_Cloud_Particle_Size_Water_Mean(1:ncol)  = R_UNDEF
              cospOUT%modis_Cloud_Particle_Size_Ice_Mean(1:ncol)    = R_UNDEF
              cospOUT%modis_Cloud_Top_Pressure_Total_Mean(1:ncol)   = R_UNDEF
+             ! YQIN 
+             cospOUT%modis_Cloud_Top_Temperature_Total_Mean(1:ncol)   = R_UNDEF
+             cospOUT%modis_Cloud_Top_Nd_Q06_Total_Mean(1:ncol)   = R_UNDEF
+             cospOUT%modis_Cloud_Top_LWP_Q06_Total_Mean(1:ncol)  = R_UNDEF
+             cospOUT%modis_Cloud_Top_Tau_Q06_Total_Mean(1:ncol)  = R_UNDEF
+             cospOUT%modis_Cloud_Top_Size_Q06_Total_Mean(1:ncol)  = R_UNDEF
+          
+             cospOUT%modis_Cloud_Top_Nd_ALL_Total_Mean(1:ncol)   = R_UNDEF
+             cospOUT%modis_Cloud_Top_LWP_ALL_Total_Mean(1:ncol)  = R_UNDEF
+             cospOUT%modis_Cloud_Top_Tau_ALL_Total_Mean(1:ncol)  = R_UNDEF
+             cospOUT%modis_Cloud_Top_Size_ALL_Total_Mean(1:ncol)  = R_UNDEF
+
+
              cospOUT%modis_Liquid_Water_Path_Mean(1:ncol)          = R_UNDEF
              cospOUT%modis_Ice_Water_Path_Mean(1:ncol)             = R_UNDEF
           endwhere
@@ -2351,7 +2516,7 @@ CONTAINS
           enddo
 
           ! YQIN 04/24/24
-          do i=1,nlwp_cosp_modis
+          do i=1,niwp_cosp_modis
             do k=1,numMODISReffIceBins
                 where(cam_sunlit(1:ncol) .eq. 0)
                     cospOUT%modis_IWP_vs_ReffICE(1:ncol,i,k) = R_UNDEF
@@ -2476,6 +2641,9 @@ CONTAINS
        cltmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Total_Mean
        clwmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Water_Mean
        climodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Ice_Mean
+       clNdmodis_Q06(1:ncol)    = cospOUT%modis_Cloud_Fraction_Nd_Q06_Mean ! YQIN
+       clNdmodis_ALL(1:ncol)    = cospOUT%modis_Cloud_Fraction_Nd_ALL_Mean ! YQIN
+
        clhmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_High_Mean
        clmmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Mid_Mean
        cllmodis(1:ncol)     = cospOUT%modis_Cloud_Fraction_Low_Mean
@@ -2485,21 +2653,39 @@ CONTAINS
        tautlogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Total_LogMean
        tauwlogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Water_LogMean
        tauilogmodis(1:ncol) = cospOUT%modis_Optical_Thickness_Ice_LogMean
-       reffclwmodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Water_Mean
+       reffclwmodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Water_Mean !reffclwmodis and reffclimodis get weighted by clwmodis before written out, see below
        reffclimodis(1:ncol) = cospOUT%modis_Cloud_Particle_Size_Ice_Mean
+       reffmodisl(1:ncol)   = cospOUT%modis_Cloud_Particle_Size_Water_Mean !reffmodisl and reffmodisi not weighted by cloud fraction because normalizing by cf monthly averages yields different Reff results
+       reffmodisi(1:ncol)   = cospOUT%modis_Cloud_Particle_Size_Ice_Mean
        pctmodis(1:ncol)     = cospOUT%modis_Cloud_Top_Pressure_Total_Mean
+       
+       ! YQIN 
+       tctmodis(1:ncol)     = cospOUT%modis_Cloud_Top_Temperature_Total_Mean
+
+       ndmodis_Q06(1:ncol)      = cospOUT%modis_Cloud_Top_Nd_Q06_Total_Mean
+       lwpmodis_Q06(1:ncol)  = cospOUT%modis_Cloud_Top_LWP_Q06_Total_Mean
+       taumodis_Q06(1:ncol)  = cospOUT%modis_Cloud_Top_Tau_Q06_Total_Mean
+       remodis_Q06(1:ncol)   = cospOUT%modis_Cloud_Top_Size_Q06_Total_Mean
+
+       ndmodis_ALL(1:ncol)      = cospOUT%modis_Cloud_Top_Nd_ALL_Total_Mean
+       lwpmodis_ALL(1:ncol)  = cospOUT%modis_Cloud_Top_LWP_ALL_Total_Mean
+       taumodis_ALL(1:ncol)  = cospOUT%modis_Cloud_Top_Tau_ALL_Total_Mean
+       remodis_ALL(1:ncol)   = cospOUT%modis_Cloud_Top_Size_ALL_Total_Mean
+
+
        lwpmodis(1:ncol)     = cospOUT%modis_Liquid_Water_Path_Mean
        iwpmodis(1:ncol)     = cospOUT%modis_Ice_Water_Path_Mean
        clmodis(1:ncol,1:ntau_cosp_modis,1:nprs_cosp)  = cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure 
+       clrimodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffIceBins) = cospOUT%modis_Optical_Thickness_vs_ReffICE
+       clrlmodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_Optical_Thickness_vs_ReffLIQ
+
        ! YQIN 04/04/23
        clmodis_liq(1:ncol,1:ntau_cosp_modis,1:nprs_cosp)  = cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Liq
        clmodis_ice(1:ncol,1:ntau_cosp_modis,1:nprs_cosp)  = cospOUT%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice
        clmodis_lwpre(1:ncol,1:nlwp_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_LWP_vs_ReffLIQ
        ! YQIN 04/24/24
-       clmodis_iwpre(1:ncol,1:nlwp_cosp_modis,1:numMODISReffIceBins) = cospOUT%modis_IWP_vs_ReffICE
+       clmodis_iwpre(1:ncol,1:niwp_cosp_modis,1:numMODISReffIceBins) = cospOUT%modis_IWP_vs_ReffICE
 
-       clrimodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffIceBins) = cospOUT%modis_Optical_Thickness_vs_ReffICE
-       clrlmodis(1:ncol,1:ntau_cosp_modis,1:numMODISReffLiqBins) = cospOUT%modis_Optical_Thickness_vs_ReffLIQ
     endif
     
     ! Use high-dimensional output to populate CAM collapsed output variables
@@ -2558,6 +2744,21 @@ CONTAINS
                 clmodis_cam(i,ipt) = clmodis(i,it,ip)
              end do
           end do
+          ! CAM clrimodis
+          do ip=1,numMODISReffIceBins
+             do it=1,ntau_cosp_modis
+                ipt=(ip-1)*ntau_cosp_modis+it
+                clrimodis_cam(i,ipt) = clrimodis(i,it,ip)
+             end do
+          end do
+          ! CAM clrlmodis
+          do ip=1,numMODISReffLiqBins
+             do it=1,ntau_cosp_modis
+                ipt=(ip-1)*ntau_cosp_modis+it
+                clrlmodis_cam(i,ipt) = clrlmodis(i,it,ip)
+             end do
+          end do
+
 
           ! YQIN 04/04/23
           ! CAM clmodis_liq
@@ -2584,26 +2785,12 @@ CONTAINS
           ! YQIN 04/24/24
           ! CAM clmodis_iwpre
           do ip=1,numMODISReffIceBins
-             do it=1,nlwp_cosp_modis
-                ipt=(ip-1)*nlwp_cosp_modis+it
+             do it=1,niwp_cosp_modis
+                ipt=(ip-1)*niwp_cosp_modis+it
                 clmodis_iwpre_cam(i,ipt) = clmodis_iwpre(i,it,ip)
              end do
           end do
 
-          ! CAM clrimodis
-          do ip=1,numMODISReffIceBins
-             do it=1,ntau_cosp_modis
-                ipt=(ip-1)*ntau_cosp_modis+it
-                clrimodis_cam(i,ipt) = clrimodis(i,it,ip)
-             end do
-          end do
-          ! CAM clrlmodis
-          do ip=1,numMODISReffLiqBins
-             do it=1,ntau_cosp_modis
-                ipt=(ip-1)*ntau_cosp_modis+it
-                clrlmodis_cam(i,ipt) = clrlmodis(i,it,ip)
-             end do
-          end do
        endif
        
        ! Subcolums 
@@ -2615,6 +2802,7 @@ CONTAINS
        end do   
     end do
     call t_stopf("output_copying")
+
 
     ! ######################################################################################
     ! Clean up
@@ -2815,6 +3003,82 @@ CONTAINS
        call outfld('CLMMODIS',clmmodis    ,pcols,lchnk)
        call outfld('CLLMODIS',cllmodis    ,pcols,lchnk)
        
+       ! YQIN -- begin
+       where ((tctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
+          tctmodis(:ncol) = R_UNDEF
+          tctmodisic(:ncol) = R_UNDEF
+       elsewhere
+          tctmodisic(:ncol) = tctmodis(:ncol)
+          !! weight by the cloud fraction cltmodis
+          tctmodis(:ncol) = tctmodis(:ncol)*cltmodis(:ncol)
+       end where
+
+       call outfld('TCTMODISIC',tctmodisic ,pcols,lchnk)
+       call outfld('TCTMODIS',  tctmodis   ,pcols,lchnk)
+
+       where ((ndmodis_Q06(:ncol)   .eq. R_UNDEF) .or. (clNdmodis_Q06(:ncol)   .eq. R_UNDEF)  &
+          .or.(lwpmodis_Q06(:ncol)  .eq. R_UNDEF) .or. (taumodis_Q06(:ncol)  .eq. R_UNDEF) &
+          .or.(remodis_Q06(:ncol)   .eq. R_UNDEF)) 
+          ndmodis_Q06(:ncol)   = R_UNDEF
+          ndmodisic_Q06(:ncol) = R_UNDEF
+          clNdmodisi_Q06(:ncol) = R_UNDEF !PMA
+          lwpmodisi_Q06(:ncol) = R_UNDEF
+          lwpmodis_Q06(:ncol)  = R_UNDEF
+          taumodis_Q06(:ncol)  = R_UNDEF
+          remodis_Q06(:ncol)   = R_UNDEF
+       elsewhere
+          ndmodisic_Q06(:ncol) = ndmodis_Q06(:ncol)
+          lwpmodisi_Q06(:ncol) = lwpmodis_Q06(:ncol)          
+          clNdmodisi_Q06(:ncol) = clNdmodis_Q06(:ncol)
+          !! weight by the cloud fraction cltmodis
+          ndmodis_Q06(:ncol)  = ndmodis_Q06(:ncol)*clNdmodis_Q06(:ncol)
+          lwpmodis_Q06(:ncol) = lwpmodis_Q06(:ncol)*clNdmodis_Q06(:ncol)
+          taumodis_Q06(:ncol) = taumodis_Q06(:ncol)*clNdmodis_Q06(:ncol)
+          remodis_Q06(:ncol)  = remodis_Q06(:ncol) *clNdmodis_Q06(:ncol)
+       end where
+
+       call outfld('NDMODISIC_Q06' , ndmodisic_Q06    ,pcols,lchnk)
+       call outfld('NDMODIS_Q06'   , ndmodis_Q06      ,pcols,lchnk)
+       call outfld('CLNDMODIS_Q06' , clNdmodis_Q06    ,pcols,lchnk)
+       call outfld('CLNDMODISI_Q06', clNdmodisi_Q06   ,pcols,lchnk)
+       call outfld('LWPMODISI_Q06' , lwpmodisi_Q06    ,pcols,lchnk)
+       call outfld('LWPMODIS_Q06'  , lwpmodis_Q06     ,pcols,lchnk)
+       call outfld('TAUMODIS_Q06'  , taumodis_Q06     ,pcols,lchnk)
+       call outfld('REMODIS_Q06'   , remodis_Q06      ,pcols,lchnk)
+
+       where ((ndmodis_ALL(:ncol)   .eq. R_UNDEF) .or. (clNdmodis_ALL(:ncol)   .eq. R_UNDEF)  &
+          .or.(lwpmodis_ALL(:ncol)  .eq. R_UNDEF) .or. (taumodis_ALL(:ncol)  .eq. R_UNDEF) &
+          .or.(remodis_ALL(:ncol)   .eq. R_UNDEF)) 
+          ndmodis_ALL(:ncol)   = R_UNDEF
+          ndmodisic_ALL(:ncol) = R_UNDEF
+          clNdmodisi_ALL(:ncol) = R_UNDEF !PMA
+          lwpmodisi_ALL(:ncol) = R_UNDEF
+          lwpmodis_ALL(:ncol)  = R_UNDEF
+          taumodis_ALL(:ncol)  = R_UNDEF
+          remodis_ALL(:ncol)   = R_UNDEF
+       elsewhere
+          ndmodisic_ALL(:ncol) = ndmodis_ALL(:ncol)
+          lwpmodisi_ALL(:ncol) = lwpmodis_ALL(:ncol)          
+          clNdmodisi_ALL(:ncol) = clNdmodis_ALL(:ncol)
+          !! weight by the cloud fraction cltmodis
+          ndmodis_ALL(:ncol)  = ndmodis_ALL(:ncol)*clNdmodis_ALL(:ncol)
+          lwpmodis_ALL(:ncol) = lwpmodis_ALL(:ncol)*clNdmodis_ALL(:ncol)
+          taumodis_ALL(:ncol) = taumodis_ALL(:ncol)*clNdmodis_ALL(:ncol)
+          remodis_ALL(:ncol)  = remodis_ALL(:ncol) *clNdmodis_ALL(:ncol)
+       end where
+
+       call outfld('NDMODISIC_ALL' , ndmodisic_ALL    ,pcols,lchnk)
+       call outfld('NDMODIS_ALL'   , ndmodis_ALL      ,pcols,lchnk)
+       call outfld('CLNDMODIS_ALL' , clNdmodis_ALL    ,pcols,lchnk)
+       call outfld('CLNDMODISI_ALL', clNdmodisi_ALL   ,pcols,lchnk)
+       call outfld('LWPMODISI_ALL' , lwpmodisi_ALL    ,pcols,lchnk)
+       call outfld('LWPMODIS_ALL'  , lwpmodis_ALL     ,pcols,lchnk)
+       call outfld('TAUMODIS_ALL'  , taumodis_ALL     ,pcols,lchnk)
+       call outfld('REMODIS_ALL'   , remodis_ALL      ,pcols,lchnk)
+
+       ! YQIN -- end        
+
+
        !! where there is no cloud fraction or no retrieval, set to R_UNDEF, 
        !! otherwise weight retrieval by cloud fraction
        where ((cltmodis(:ncol) .eq. R_UNDEF) .or. (tautmodis(:ncol) .eq. R_UNDEF))
@@ -2881,6 +3145,40 @@ CONTAINS
        end where
        call outfld('REFFCLIMODIS',reffclimodis    ,pcols,lchnk)
        
+       where ((reffmodisl(:ncol) .eq. R_UNDEF) .or. (clwmodis(:ncol) .eq. R_UNDEF))
+          reffmodisl(:ncol) = R_UNDEF
+       end where
+       call outfld('REFFMODISL',reffmodisl        ,pcols,lchnk)
+       
+       where ((reffmodisi(:ncol) .eq. R_UNDEF) .or. (climodis(:ncol) .eq. R_UNDEF))
+          reffmodisi(:ncol) = R_UNDEF
+       end where
+       call outfld('REFFMODISI',reffmodisi        ,pcols,lchnk)
+
+       where (reffclwmodis(:ncol) .eq. R_UNDEF) 
+          clwmodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved reffclwmodis
+          clwmodisic(:ncol) = clwmodis(:ncol)
+       end where
+       call outfld('CLWMODISIC',clwmodisic   ,pcols,lchnk)
+       
+       where (reffclimodis(:ncol)  .eq. R_UNDEF)
+          climodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved reffclimodis
+          climodisic(:ncol) = climodis(:ncol)
+       end where
+       call outfld('CLIMODISIC',climodisic    ,pcols,lchnk)
+
+       where (tautmodis(:ncol) .eq. R_UNDEF)
+          cltmodisic(:ncol) = R_UNDEF
+       elsewhere
+          !! cloud fraction with retrieved tautmodis
+          cltmodisic(:ncol) = cltmodis(:ncol)
+       end where
+       call outfld('CLTMODISIC',cltmodisic    ,pcols,lchnk)
+ 
        where ((pctmodis(:ncol)  .eq. R_UNDEF) .or. ( cltmodis(:ncol) .eq. R_UNDEF))
           pctmodis(:ncol) = R_UNDEF
        elsewhere
@@ -3531,6 +3829,9 @@ CONTAINS
        allocate(x%modis_Cloud_Fraction_Total_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Water_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Ice_Mean(Npoints))
+       allocate(x%modis_Cloud_Fraction_Nd_Q06_Mean(Npoints)) ! YQIN
+       allocate(x%modis_Cloud_Fraction_Nd_ALL_Mean(Npoints)) ! YQIN
+
        allocate(x%modis_Cloud_Fraction_High_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Mid_Mean(Npoints))
        allocate(x%modis_Cloud_Fraction_Low_Mean(Npoints))
@@ -3543,18 +3844,33 @@ CONTAINS
        allocate(x%modis_Cloud_Particle_Size_Water_Mean(Npoints))
        allocate(x%modis_Cloud_Particle_Size_Ice_Mean(Npoints))
        allocate(x%modis_Cloud_Top_Pressure_Total_Mean(Npoints))
+       ! YQIN 
+       allocate(x%modis_Cloud_Top_Temperature_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_Nd_Q06_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_LWP_Q06_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_Tau_Q06_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_Size_Q06_Total_Mean(Npoints))
+
+       allocate(x%modis_Cloud_Top_Nd_ALL_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_LWP_ALL_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_Tau_ALL_Total_Mean(Npoints))
+       allocate(x%modis_Cloud_Top_Size_ALL_Total_Mean(Npoints))
+
+
        allocate(x%modis_Liquid_Water_Path_Mean(Npoints))
        allocate(x%modis_Ice_Water_Path_Mean(Npoints))
        allocate(x%modis_Optical_Thickness_vs_Cloud_Top_Pressure(nPoints,numModisTauBins,numMODISPresBins))
+       allocate(x%modis_Optical_thickness_vs_ReffLIQ(nPoints,numMODISTauBins,numMODISReffLiqBins))   
+       allocate(x%modis_Optical_Thickness_vs_ReffICE(nPoints,numMODISTauBins,numMODISReffIceBins))
+       allocate(x%modis_CloudMask(Npoints,Ncolumns))
+
        ! YQIN 04/04/23
        allocate(x%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Liq(nPoints,numModisTauBins,numMODISPresBins))
        allocate(x%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Ice(nPoints,numModisTauBins,numMODISPresBins))
        allocate(x%modis_LWP_vs_ReffLIQ(nPoints,numMODISLWPBins,numMODISReffLiqBins))
        ! YQIN 04/24/24
-       allocate(x%modis_IWP_vs_ReffICE(nPoints,numMODISLWPBins,numMODISReffIceBins))
+       allocate(x%modis_IWP_vs_ReffICE(nPoints,numMODISIWPBins,numMODISReffIceBins))
 
-       allocate(x%modis_Optical_thickness_vs_ReffLIQ(nPoints,numMODISTauBins,numMODISReffLiqBins))   
-       allocate(x%modis_Optical_Thickness_vs_ReffICE(nPoints,numMODISTauBins,numMODISReffIceBins))
     endif
     
     ! CALIPSO simulator
@@ -3807,10 +4123,25 @@ CONTAINS
         deallocate(y%modis_Cloud_Fraction_Total_Mean)       
         nullify(y%modis_Cloud_Fraction_Total_Mean)       
      endif
+     if (associated(y%modis_CloudMask))                      then
+        deallocate(y%modis_CloudMask)       
+        nullify(y%modis_CloudMask)       
+     endif
      if (associated(y%modis_Cloud_Fraction_Ice_Mean))                        then
         deallocate(y%modis_Cloud_Fraction_Ice_Mean)     
         nullify(y%modis_Cloud_Fraction_Ice_Mean)     
      endif
+
+     ! YQIN
+     if (associated(y%modis_Cloud_Fraction_Nd_Q06_Mean))                        then
+        deallocate(y%modis_Cloud_Fraction_Nd_Q06_Mean)     
+        nullify(y%modis_Cloud_Fraction_Nd_Q06_Mean)     
+     endif
+     if (associated(y%modis_Cloud_Fraction_Nd_ALL_Mean))                        then
+        deallocate(y%modis_Cloud_Fraction_Nd_ALL_Mean)     
+        nullify(y%modis_Cloud_Fraction_Nd_ALL_Mean)     
+     endif
+
      if (associated(y%modis_Cloud_Fraction_Water_Mean))                      then
         deallocate(y%modis_Cloud_Fraction_Water_Mean)           
         nullify(y%modis_Cloud_Fraction_Water_Mean)           
@@ -3863,6 +4194,48 @@ CONTAINS
         deallocate(y%modis_Cloud_Top_Pressure_Total_Mean)           
         nullify(y%modis_Cloud_Top_Pressure_Total_Mean)           
      endif
+
+     ! YQIN
+     if (associated(y%modis_Cloud_Top_Temperature_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Temperature_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Temperature_Total_Mean)           
+     endif
+
+     if (associated(y%modis_Cloud_Top_Nd_Q06_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Nd_Q06_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Nd_Q06_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_LWP_Q06_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_LWP_Q06_Total_Mean)           
+        nullify(y%modis_Cloud_Top_LWP_Q06_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_Tau_Q06_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Tau_Q06_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Tau_Q06_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_Size_Q06_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Size_Q06_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Size_Q06_Total_Mean)           
+     endif
+
+     if (associated(y%modis_Cloud_Top_Nd_ALL_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Nd_ALL_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Nd_ALL_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_LWP_ALL_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_LWP_ALL_Total_Mean)           
+        nullify(y%modis_Cloud_Top_LWP_ALL_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_Tau_ALL_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Tau_ALL_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Tau_ALL_Total_Mean)           
+     endif
+     if (associated(y%modis_Cloud_Top_Size_ALL_Total_Mean))                  then
+        deallocate(y%modis_Cloud_Top_Size_ALL_Total_Mean)           
+        nullify(y%modis_Cloud_Top_Size_ALL_Total_Mean)           
+     endif
+
+
      if (associated(y%modis_Liquid_Water_Path_Mean))                         then
         deallocate(y%modis_Liquid_Water_Path_Mean)     
         nullify(y%modis_Liquid_Water_Path_Mean)     
@@ -3875,6 +4248,15 @@ CONTAINS
         deallocate(y%modis_Optical_Thickness_vs_Cloud_Top_Pressure)     
         nullify(y%modis_Optical_Thickness_vs_Cloud_Top_Pressure)     
      endif
+     if (associated(y%modis_Optical_thickness_vs_ReffLIQ))                   then
+        deallocate(y%modis_Optical_thickness_vs_ReffLIQ)
+        nullify(y%modis_Optical_thickness_vs_ReffLIQ)
+     endif
+     if (associated(y%modis_Optical_thickness_vs_ReffICE))                   then
+        deallocate(y%modis_Optical_thickness_vs_ReffICE)
+        nullify(y%modis_Optical_thickness_vs_ReffICE)
+     endif
+
 
      ! YQIN 04/04/23
      if (associated(y%modis_Optical_Thickness_vs_Cloud_Top_Pressure_Liq))        then
@@ -3895,14 +4277,6 @@ CONTAINS
         nullify(y%modis_IWP_vs_ReffICE)
      endif
 
-     if (associated(y%modis_Optical_thickness_vs_ReffLIQ))                   then
-        deallocate(y%modis_Optical_thickness_vs_ReffLIQ)
-        nullify(y%modis_Optical_thickness_vs_ReffLIQ)
-     endif
-     if (associated(y%modis_Optical_thickness_vs_ReffICE))                   then
-        deallocate(y%modis_Optical_thickness_vs_ReffICE)
-        nullify(y%modis_Optical_thickness_vs_ReffICE)
-     endif
      if (associated(y%calipso_cldtype)) then
         deallocate(y%calipso_cldtype)
         nullify(y%calipso_cldtype)
