@@ -583,7 +583,8 @@ CONTAINS
        lmisr_sim = .true.
        lmodis_sim = .true.
        cosp_ncolumns = 10
-       cosp_nradsteps = 3
+!       cosp_nradsteps = 3
+       cosp_nradsteps = 1 ! YQIN
     end if
     
     !! reset COSP namelist variables based on input from cam namelist variables
@@ -1086,6 +1087,9 @@ CONTAINS
        call addfld ('TAUMODIS_ALL',     horiz_only,  'A','1',       'MODIS TAU*CLNDMODIS (same sampling as Nd)',                        flag_xyfill=.true., fill_value=R_UNDEF)
        call addfld ('REMODIS_ALL',      horiz_only,  'A','m',        'MODIS RE*CLNDMODIS (same sampling as Nd)',                         flag_xyfill=.true., fill_value=R_UNDEF)
 
+       !PMA
+       call addfld ('AI_CLRSKY',horiz_only,'A','-','Clear-sky Aerosol Index',flag_xyfill=.true., fill_value=R_UNDEF)
+
 
        ! float lwpmodis ( time, loc )
        call addfld ('LWPMODIS',horiz_only,'A','kg m-2','MODIS Cloud Liquid Water Path*CLWMODIS',                    &
@@ -1160,6 +1164,8 @@ CONTAINS
        call add_default ('LWPMODISI_ALL',cosp_histfile_num,' ')
        call add_default ('TAUMODIS_ALL',cosp_histfile_num, ' ')
        call add_default ('REMODIS_ALL',cosp_histfile_num, ' ')
+
+       call add_default ('AI_CLRSKY', cosp_histfile_num,' ') ! PMA
 
        call add_default ('LWPMODIS',cosp_histfile_num,' ')
        call add_default ('IWPMODIS',cosp_histfile_num,' ')
@@ -1306,7 +1312,7 @@ CONTAINS
   ! ######################################################################################
   ! SUBROUTINE cospsimulator_intr_run
   ! ######################################################################################
-  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,cld_swtau_in,snow_tau_in,snow_emis_in)
+  subroutine cospsimulator_intr_run(state,pbuf, cam_in,emis,coszrs,aerindex_in,cld_swtau_in,snow_tau_in,snow_emis_in) !PMA
     use physics_types,        only: physics_state
     use physics_buffer,       only: physics_buffer_desc, pbuf_get_field, pbuf_old_tim_idx
     use camsrfexch,           only: cam_in_t
@@ -1332,6 +1338,7 @@ CONTAINS
     type(cam_in_t),      intent(in)         :: cam_in
     real(r8), intent(in) :: emis(pcols,pver)                  ! cloud longwave emissivity
     real(r8), intent(in) :: coszrs(pcols)                     ! cosine solar zenith angle (to tell if day or night)
+    real(r8), intent(in) :: aerindex_in(pcols) ! PMA
     real(r8), intent(in),optional :: cld_swtau_in(pcols,pver) ! RRTM cld_swtau_in, read in using this variable
     real(r8), intent(in),optional :: snow_tau_in(pcols,pver)  ! RRTM grid-box mean SW snow optical depth, used for CAM5 simulations 
     real(r8), intent(in),optional :: snow_emis_in(pcols,pver) ! RRTM grid-box mean LW snow optical depth, used for CAM5 simulations 
@@ -1657,7 +1664,6 @@ CONTAINS
     real(r8) :: refl_parasol(pcols,nsza_cosp)            ! CAM parasol_refl (time,sza,profile)
     real(r8) :: scops_out(pcols,nhtml_cosp*nscol_cosp)   ! CAM frac_out (time,height_mlev,column,profile)
     real(r8) :: cltmodis(pcols)
-    real(r8) :: cltmodis_ALL(pcols)
     real(r8) :: clwmodis(pcols)
     real(r8) :: climodis(pcols)
     real(r8) :: cltmodisic(pcols)
@@ -1699,6 +1705,9 @@ CONTAINS
     real(r8) :: lwpmodisi_ALL(pcols)
     real(r8) :: taumodis_ALL(pcols)
     real(r8) :: remodis_ALL(pcols)
+
+    !PMA
+    real(r8) :: aerindex(pcols)
 
     real(r8) :: lwpmodis(pcols)
     real(r8) :: iwpmodis(pcols)
@@ -1836,7 +1845,6 @@ CONTAINS
     refl_parasol(1:pcols,1:nsza_cosp)                = R_UNDEF
     scops_out(1:pcols,1:nhtml_cosp*nscol_cosp)       = R_UNDEF
     cltmodis(1:pcols)                                = R_UNDEF
-    cltmodis_ALL(1:pcols)                                = R_UNDEF
 
     clwmodis(1:pcols)                                = R_UNDEF
     climodis(1:pcols)                                = R_UNDEF
@@ -1879,6 +1887,9 @@ CONTAINS
     lwpmodisi_ALL(1:pcols)                           = R_UNDEF
     taumodis_ALL(1:pcols)                            = R_UNDEF
     remodis_ALL(1:pcols)                             = R_UNDEF
+
+    !PMA
+    aerindex(1:pcols)                                = R_UNDEF
 
     lwpmodis(1:pcols)                                = R_UNDEF
     iwpmodis(1:pcols)                                = R_UNDEF
@@ -2803,6 +2814,14 @@ CONTAINS
     end do
     call t_stopf("output_copying")
 
+    !PMA
+    if (lmodis_sim) then
+    do i=1,ncol
+      if (cltmodis(i).ge.0._r8 .and. cltmodis(i) .lt. 100._r8) then !.and.aerindex_in(i) .ge. 0.01_r8) then
+          aerindex(i) = aerindex_in(i)
+      endif
+    end do
+    endif
 
     ! ######################################################################################
     ! Clean up
@@ -3077,6 +3096,8 @@ CONTAINS
        call outfld('REMODIS_ALL'   , remodis_ALL      ,pcols,lchnk)
 
        ! YQIN -- end        
+
+       call outfld('AI_CLRSKY',aerindex    ,pcols,lchnk)
 
 
        !! where there is no cloud fraction or no retrieval, set to R_UNDEF, 
